@@ -1,5 +1,4 @@
 using Akka.Hosting;
-using JasperFx;
 using JasperFx.Events.Projections;
 using Marten;
 using MartenAkkaTests.Api;
@@ -36,10 +35,7 @@ builder.Services.AddAkka("akka-universe", (builder, sp) =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+if (app.Environment.IsDevelopment()) app.MapOpenApi();
 app.MapControllers();
 
 app.UseHttpsRedirection();

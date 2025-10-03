@@ -9,26 +9,28 @@ public sealed record SomethingHappened(Guid Id, string Name);
 
 public class TestController : ControllerBase
 {
-    private readonly IActorRef _somethingActor;
     private readonly IActorRef _rebuildActor;
+    private readonly IActorRef _somethingActor;
     private readonly IDocumentStore _store;
 
     public TestController(
         IRequiredActor<SomethingActor> somethingActor,
         IRequiredActor<RebuildProjectionActor> rebuildActor,
-        IDocumentStore store )
+        IDocumentStore store)
     {
         _somethingActor = somethingActor.ActorRef;
         _rebuildActor = rebuildActor.ActorRef;
         _store = store;
     }
+
     [HttpGet("/test")]
     public async Task<IActionResult> Get()
     {
         try
         {
             var x = new Guid("00000000-0000-0000-0000-000000000001");
-            var reply = await _somethingActor.Ask<HandledOkNotification>(new SomethingActor.SomethingHappenedCommand(x));
+            var reply = await _somethingActor.Ask<HandledOkNotification>(
+                new SomethingActor.SomethingHappenedCommand(x));
             return Ok("Accepted: " + reply.NewCounter);
         }
         catch (Exception e)
@@ -36,7 +38,7 @@ public class TestController : ControllerBase
             throw new ApplicationException(e.Message, e);
         }
     }
-    
+
     [HttpGet("/test2")]
     public async Task<IActionResult> GetTest2()
     {

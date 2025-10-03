@@ -10,8 +10,6 @@ public class SomethingActor : ReceiveActor
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public sealed record SomethingHappenedCommand(Guid Id);
-    
     public SomethingActor(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
@@ -23,14 +21,14 @@ public class SomethingActor : ReceiveActor
         //Create a new scope to get a new session instance
         using var scope = _serviceProvider.CreateScope();
         var session = scope.ServiceProvider.GetService<IDocumentSession>();
-        
-        if(session == null)
+
+        if (session == null)
             throw new ArgumentNullException(nameof(session), "IDocumentSession cannot be null");
         session.Events.Append(cmd.Id, new SomethingHappened(cmd.Id, DateTime.Now.ToShortTimeString()));
         await session.SaveChangesAsync();
         Console.WriteLine($"Handled message: {cmd}");
         var counter = await session.LoadAsync<SomethingCounter>(cmd.Id);
-        if(counter == null)
+        if (counter == null)
             throw new InvalidOperationException("Counter should not be null here");
         Sender.Tell(new HandledOkNotification(counter.Id, counter.Count));
     }
@@ -39,4 +37,6 @@ public class SomethingActor : ReceiveActor
     {
         return Props.Create(() => new SomethingActor(serviceProvider));
     }
+
+    public sealed record SomethingHappenedCommand(Guid Id);
 }

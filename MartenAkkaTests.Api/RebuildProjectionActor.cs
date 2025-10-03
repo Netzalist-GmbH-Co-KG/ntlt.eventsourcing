@@ -1,16 +1,11 @@
 using Akka.Actor;
 using Marten;
-using Marten.Events.Daemon;
 
 namespace MartenAkkaTests.Api;
 
 public class RebuildProjectionActor : ReceiveActor
 {
     private readonly IServiceProvider _serviceProvider;
-
-    public sealed record RebuildProjectionCommand(string? ProjectionName = null);
-    public sealed record RebuildCompletedNotification(Dictionary<string, long> ProjectionStats);
-    public sealed record RebuildFailedNotification(string Error);
 
     public RebuildProjectionActor(IServiceProvider serviceProvider)
     {
@@ -65,4 +60,10 @@ public class RebuildProjectionActor : ReceiveActor
     {
         return Props.Create(() => new RebuildProjectionActor(serviceProvider));
     }
+
+    public sealed record RebuildProjectionCommand(string? ProjectionName = null);
+
+    public sealed record RebuildCompletedNotification(Dictionary<string, long> ProjectionStats);
+
+    public sealed record RebuildFailedNotification(string Error);
 }

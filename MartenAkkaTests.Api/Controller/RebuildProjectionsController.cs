@@ -15,7 +15,7 @@ public class RebuildProjectionsController : ControllerBase
         _rebuildActor = rebuildActor.ActorRef;
     }
 
-    [HttpGet("/rebuild")]
+    [HttpPost("/rebuild")]
     public async Task<IActionResult> RebuildProjections([FromQuery] Guid sessionId, [FromQuery] string? projection = null)
     {
         try

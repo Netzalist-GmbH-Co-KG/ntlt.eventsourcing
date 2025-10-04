@@ -26,7 +26,7 @@ public class SessionController
         _endSessionActor = endSessionActor.ActorRef;
     }
 
-    [HttpGet("api/session/create")]
+    [HttpPost("api/session/create")]
     public async Task<IActionResult> CreateSession()
     {
         var result = await _createSessionActor.Ask<CreateSessionResult>(new CreateSessionCmd());
@@ -42,8 +42,8 @@ public class SessionController
         return response;
     }
     
-    [HttpGet("api/session/end/{sessionId:guid}")]
-    public async Task<IActionResult> EndSession(Guid sessionId, string reason = "UserRequest")
+    [HttpPost("api/session/end")]
+    public async Task<IActionResult> EndSession([FromQuery] Guid sessionId,[FromQuery] string reason = "UserRequest")
     {
         var result = await _endSessionActor.Ask<EndSessionResult>(new EndSessionCmd(sessionId, reason));
         if (result.Success)

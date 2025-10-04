@@ -9,6 +9,7 @@ using MartenAkkaTests.Api.SessionManagement.EndSession;
 using MartenAkkaTests.Api.UserManagement;
 using MartenAkkaTests.Api.UserManagement.AddAuthentication;
 using MartenAkkaTests.Api.UserManagement.CreateUser;
+using MartenAkkaTests.Api.UserManagement.DeactivateUser;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,6 +52,9 @@ builder.Services.AddAkka("akka-universe", (akkaConfigurationBuilder, sp) =>
 
         var addPasswordAuthenticationCmdHandler = system.ActorOf(AddPasswordAuthenticationCmdHandler.Prop(sp), "AddPasswordAuthenticationCmdHandler");
         registry.Register<AddPasswordAuthenticationCmdHandler>(addPasswordAuthenticationCmdHandler);
+
+        var deactivateUserCmdHandler = system.ActorOf(DeactivateUserCmdHandler.Prop(sp), "DeactivateUserCmdHandler");
+        registry.Register<DeactivateUserCmdHandler>(deactivateUserCmdHandler);
         
         var createSessionCmdHandler = system.ActorOf(CreateSessionCmdHandler.Prop(sp), "CreateSessionCmdHandler");
         registry.Register<CreateSessionCmdHandler>(createSessionCmdHandler);

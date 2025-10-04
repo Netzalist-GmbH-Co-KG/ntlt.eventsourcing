@@ -24,12 +24,15 @@ public class SomethingActor : ReceiveActor
 
         if (session == null)
             throw new ArgumentNullException(nameof(session), "IDocumentSession cannot be null");
+
         session.Events.Append(cmd.Id, new SomethingHappened(cmd.Id, DateTime.Now.ToShortTimeString()));
         await session.SaveChangesAsync();
+
         Console.WriteLine($"Handled message: {cmd}");
         var counter = await session.LoadAsync<SomethingCounter>(cmd.Id);
         if (counter == null)
             throw new InvalidOperationException("Counter should not be null here");
+
         Sender.Tell(new HandledOkNotification(counter.Id, counter.Count));
     }
 

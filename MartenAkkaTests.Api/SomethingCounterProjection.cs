@@ -5,14 +5,14 @@ namespace MartenAkkaTests.Api;
 
 public sealed record SomethingCounter(Guid Id, int Count);
 
-public class SomethingCounterProjection : SingleStreamProjection<SomethingCounter, Guid>
+public sealed class SomethingCounterProjection : SingleStreamProjection<SomethingCounter, Guid>
 {
-    public SomethingCounter Create(SomethingHappened started)
+    public static SomethingCounter Create(SomethingHappened started)
     {
         return new SomethingCounter(started.Id, 1);
     }
 
-    public SomethingCounter Apply(SomethingCounter counter, SomethingHappened happened)
+    public static SomethingCounter Apply(SomethingCounter counter, SomethingHappened happened)
     {
         return counter with
         {

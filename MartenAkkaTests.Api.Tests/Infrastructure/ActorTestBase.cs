@@ -1,0 +1,65 @@
+﻿using Akka.TestKit;
+using Akka.TestKit.NUnit;
+using JasperFx;
+using JasperFx.Events.Projections;
+using Marten;
+using MartenAkkaTests.Api.Common;
+using MartenAkkaTests.Api.SessionManagement;
+using MartenAkkaTests.Api.UserManagement;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace MartenAkkaTests.Api.Tests.Infrastructure;
+
+public abstract class ActorTestBase : TestKit
+{
+    protected IServiceProvider ServiceProvider { get; private set; }
+    protected IDocumentStore DocumentStore { get; private set; }
+
+    [SetUp]
+    public void BaseSetup()
+    {
+        var services = new ServiceCollection();
+
+        // Register test doubles
+        services.AddSingleton<IDateTimeProvider>(new FakeDateTimeProvider());
+        services.AddSingleton<IGuidProvider>(new FakeGuidProvider());
+
+        // In-Memory Marten Store
+        services.AddMarten(options =>
+            {
+                options.Connection("Host=localhost;Port=5435;Database=test_db;Username=postgres;Password=postgres");
+                options.AutoCreateSchemaObjects = AutoCreate.All;
+                options.CreateDatabasesForTenants(c =>              // ← Hinzufügen
+                {
+                    c.ForTenant()
+                        .CheckAgainstPgDatabase()
+                        .WithOwner("postgres")
+                        .WithEncoding("UTF-8")
+                        .ConnectionLimit(-1);
+                });
+
+                options.DatabaseSchemaName = $"test_{Guid.NewGuid():N}"; // Isolierte Schema pro Test
+
+                options.Schema.For<Session>().Identity(x => x.SessionId);
+                options.Schema.For<User>().Identity(x => x.UserId);    
+
+                // Register Projections
+                options.Projections.Add<SessionProjection>(ProjectionLifecycle.Inline);
+                options.Projections.Add<UserProjection>(ProjectionLifecycle.Inline);
+            })
+            .UseLightweightSessions();
+
+        ServiceProvider = services.BuildServiceProvider();
+        DocumentStore = ServiceProvider.GetRequiredService<IDocumentStore>();
+    }
+
+    [TearDown]
+    public async Task BaseTearDown()
+    {
+        // Cleanup: Schema droppen
+        await DocumentStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        Shutdown();
+        ((IDisposable)ServiceProvider).Dispose();
+        DocumentStore.Dispose();
+    }
+}

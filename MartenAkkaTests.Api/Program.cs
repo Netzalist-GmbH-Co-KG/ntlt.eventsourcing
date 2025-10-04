@@ -1,7 +1,12 @@
 using Akka.Hosting;
 using JasperFx.Events.Projections;
 using Marten;
-using MartenAkkaTests.Api;
+using MartenAkkaTests.Api.Common;
+using MartenAkkaTests.Api.EventSourcing;
+using MartenAkkaTests.Api.SessionManagement;
+using MartenAkkaTests.Api.SessionManagement.CreateSession;
+using MartenAkkaTests.Api.UserManagement;
+using MartenAkkaTests.Api.UserManagement.CreateUser;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,25 +14,38 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+builder.Services.AddTransient<IDateTimeProvider, DateTimeProvider>();
+builder.Services.AddTransient<IGuidProvider, GuidProvider>();
 
 var connectionString = "host=localhost:5435;database=eventsourcing;username=postgres;password=postgres";
 builder.Services.AddMarten(options =>
     {
         // Establish the connection string to your Marten database
         options.Connection(connectionString);
-        options.Projections.Add<SomethingCounterProjection>(ProjectionLifecycle.Inline);
+        options.Schema.For<User>()
+            .Index(x => x.UserName, idx => idx.IsUnique = true)
+            .Index(x => x.Email, idx => idx.IsUnique = true);
+        
+        options.Schema.For<Session>().Identity(x => x.SessionId);
+        options.Schema.For<User>().Identity(x => x.UserId);    
+
+        options.Projections.Add<UserProjection>(ProjectionLifecycle.Inline);
+        options.Projections.Add<SessionProjection>(ProjectionLifecycle.Inline);
     })
     .UseLightweightSessions();
 
-builder.Services.AddAkka("akka-universe", (builder, sp) =>
+builder.Services.AddAkka("akka-universe", (akkaConfigurationBuilder, sp) =>
 {
-    builder.WithActors((system, registry) =>
+    akkaConfigurationBuilder.WithActors((system, registry) =>
     {
-        var somethingActor = system.ActorOf(SomethingActor.Prop(sp), "somethingActor");
-        registry.Register<SomethingActor>(somethingActor);
-
         var rebuildActor = system.ActorOf(RebuildProjectionActor.Prop(sp), "rebuildProjectionActor");
         registry.Register<RebuildProjectionActor>(rebuildActor);
+        
+        var createUserCmdHandler = system.ActorOf(CreateUserCmdHandler.Prop(sp), "CreateUserCmdHandler");
+        registry.Register<CreateUserCmdHandler>(createUserCmdHandler);
+        
+        var createSessionCmdHandler = system.ActorOf(CreateSessionCmdHandler.Prop(sp), "CreateSessionCmdHandler");
+        registry.Register<CreateSessionCmdHandler>(createSessionCmdHandler);
     });
 });
 

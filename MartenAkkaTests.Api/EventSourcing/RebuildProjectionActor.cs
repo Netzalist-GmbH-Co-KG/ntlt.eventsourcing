@@ -1,15 +1,14 @@
 using Akka.Actor;
 using Marten;
+using MartenAkkaTests.Api.SessionManagement;
+using MartenAkkaTests.Api.UserManagement;
 
-namespace MartenAkkaTests.Api;
+namespace MartenAkkaTests.Api.EventSourcing;
 
-public class RebuildProjectionActor : ReceiveActor
+public class RebuildProjectionActor : CmdHandlerBase
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public RebuildProjectionActor(IServiceProvider serviceProvider)
+    public RebuildProjectionActor(IServiceProvider serviceProvider) : base(serviceProvider)
     {
-        _serviceProvider = serviceProvider;
         ReceiveAsync<RebuildProjectionCommand>(async cmd => await HandleRebuild(cmd));
     }
 
@@ -17,7 +16,7 @@ public class RebuildProjectionActor : ReceiveActor
     {
         try
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
             var store = scope.ServiceProvider.GetRequiredService<IDocumentStore>();
 
             var daemon = await store.BuildProjectionDaemonAsync();
@@ -34,7 +33,7 @@ public class RebuildProjectionActor : ReceiveActor
             {
                 // Rebuild ALL projections - manually list them or use reflection
                 // For now, rebuild known projections explicitly
-                var projectionTypes = new[] { typeof(SomethingCounter) };
+                var projectionTypes = new[] { typeof(SessionProjection), typeof(UserProjection) };
 
                 foreach (var projectionType in projectionTypes)
                 {

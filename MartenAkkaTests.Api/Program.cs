@@ -5,14 +5,19 @@ using MartenAkkaTests.Api.Common;
 using MartenAkkaTests.Api.EventSourcing;
 using MartenAkkaTests.Api.SessionManagement;
 using MartenAkkaTests.Api.SessionManagement.CreateSession;
+using MartenAkkaTests.Api.SessionManagement.EndSession;
 using MartenAkkaTests.Api.UserManagement;
+using MartenAkkaTests.Api.UserManagement.AddAuthentication;
 using MartenAkkaTests.Api.UserManagement.CreateUser;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 builder.Services.AddControllers();
 builder.Services.AddTransient<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddTransient<IGuidProvider, GuidProvider>();
@@ -43,9 +48,16 @@ builder.Services.AddAkka("akka-universe", (akkaConfigurationBuilder, sp) =>
         
         var createUserCmdHandler = system.ActorOf(CreateUserCmdHandler.Prop(sp), "CreateUserCmdHandler");
         registry.Register<CreateUserCmdHandler>(createUserCmdHandler);
+
+        var addPasswordAuthenticationCmdHandler = system.ActorOf(AddPasswordAuthenticationCmdHandler.Prop(sp), "AddPasswordAuthenticationCmdHandler");
+        registry.Register<AddPasswordAuthenticationCmdHandler>(addPasswordAuthenticationCmdHandler);
         
         var createSessionCmdHandler = system.ActorOf(CreateSessionCmdHandler.Prop(sp), "CreateSessionCmdHandler");
         registry.Register<CreateSessionCmdHandler>(createSessionCmdHandler);
+        
+        var endSessionCmdHandler = system.ActorOf(EndSessionCmdHandler.Prop(sp), "EndSessionCmdHandler");
+        registry.Register<EndSessionCmdHandler>(endSessionCmdHandler);
+
     });
 });
 
@@ -57,5 +69,7 @@ if (app.Environment.IsDevelopment()) app.MapOpenApi();
 app.MapControllers();
 
 app.UseHttpsRedirection();
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.Run();

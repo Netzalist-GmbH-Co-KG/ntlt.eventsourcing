@@ -18,7 +18,15 @@ public class RebuildProjectionActor : CmdHandlerBase
         {
             using var scope = ServiceProvider.CreateScope();
             var store = scope.ServiceProvider.GetRequiredService<IDocumentStore>();
-
+            var session = store.LightweightSession();
+            
+            var validSession = await IsValidSession(cmd.SessionId, session);
+            if(!validSession)
+            {
+                Sender.Tell(new RebuildFailedNotification("Invalid or closed session"));
+                return;
+            }
+            
             var daemon = await store.BuildProjectionDaemonAsync();
             var stats = new Dictionary<string, long>();
 
@@ -33,7 +41,7 @@ public class RebuildProjectionActor : CmdHandlerBase
             {
                 // Rebuild ALL projections - manually list them or use reflection
                 // For now, rebuild known projections explicitly
-                var projectionTypes = new[] { typeof(SessionProjection), typeof(UserProjection) };
+                var projectionTypes = new[] { typeof(Session), typeof(User) };
 
                 foreach (var projectionType in projectionTypes)
                 {
@@ -60,7 +68,7 @@ public class RebuildProjectionActor : CmdHandlerBase
         return Props.Create(() => new RebuildProjectionActor(serviceProvider));
     }
 
-    public sealed record RebuildProjectionCommand(string? ProjectionName = null);
+    public sealed record RebuildProjectionCommand(Guid SessionId, string? ProjectionName = null);
 
     public sealed record RebuildCompletedNotification(Dictionary<string, long> ProjectionStats);
 

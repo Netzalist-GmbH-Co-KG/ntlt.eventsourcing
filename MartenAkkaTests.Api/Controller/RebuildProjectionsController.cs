@@ -5,23 +5,23 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MartenAkkaTests.Api.Controller;
 
-public class TestController : ControllerBase
+public class RebuildProjectionsController : ControllerBase
 {
     private readonly IActorRef _rebuildActor;
 
-    public TestController(
+    public RebuildProjectionsController(
         IRequiredActor<RebuildProjectionActor> rebuildActor)
     {
         _rebuildActor = rebuildActor.ActorRef;
     }
 
     [HttpGet("/rebuild")]
-    public async Task<IActionResult> RebuildProjections([FromQuery] string? projection = null)
+    public async Task<IActionResult> RebuildProjections([FromQuery] Guid sessionId, [FromQuery] string? projection = null)
     {
         try
         {
             var result = await _rebuildActor.Ask<object>(
-                new RebuildProjectionActor.RebuildProjectionCommand(projection),
+                new RebuildProjectionActor.RebuildProjectionCommand(sessionId, projection),
                 TimeSpan.FromMinutes(5));
 
             return result switch

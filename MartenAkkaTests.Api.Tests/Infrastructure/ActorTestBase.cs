@@ -1,6 +1,4 @@
-﻿using Akka.TestKit;
-using Akka.TestKit.NUnit;
-using JasperFx;
+﻿using JasperFx;
 using JasperFx.Events.Projections;
 using Marten;
 using MartenAkkaTests.Api.Common;
@@ -10,10 +8,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MartenAkkaTests.Api.Tests.Infrastructure;
 
-public abstract class ActorTestBase : TestKit
+public abstract class ServiceTestBase
 {
-    protected IServiceProvider ServiceProvider { get; private set; }
-    protected IDocumentStore DocumentStore { get; private set; }
+    protected IServiceProvider ServiceProvider { get; private set; } = null!;
+    protected IDocumentStore DocumentStore { get; private set; } = null!;
 
     [SetUp]
     public void BaseSetup()
@@ -29,7 +27,7 @@ public abstract class ActorTestBase : TestKit
             {
                 options.Connection("Host=localhost;Port=5435;Database=test_db;Username=postgres;Password=postgres");
                 options.AutoCreateSchemaObjects = AutoCreate.All;
-                options.CreateDatabasesForTenants(c =>              // ← Hinzufügen
+                options.CreateDatabasesForTenants(c =>
                 {
                     c.ForTenant()
                         .CheckAgainstPgDatabase()
@@ -41,13 +39,17 @@ public abstract class ActorTestBase : TestKit
                 options.DatabaseSchemaName = $"test_{Guid.NewGuid():N}"; // Isolierte Schema pro Test
 
                 options.Schema.For<Session>().Identity(x => x.SessionId);
-                options.Schema.For<User>().Identity(x => x.UserId);    
+                options.Schema.For<User>().Identity(x => x.UserId);
 
                 // Register Projections
                 options.Projections.Add<SessionProjection>(ProjectionLifecycle.Inline);
                 options.Projections.Add<UserProjection>(ProjectionLifecycle.Inline);
             })
             .UseLightweightSessions();
+
+        // Register command services
+        services.AddScoped<SessionCommandService>();
+        services.AddScoped<UserCommandService>();
 
         ServiceProvider = services.BuildServiceProvider();
         DocumentStore = ServiceProvider.GetRequiredService<IDocumentStore>();
@@ -58,7 +60,6 @@ public abstract class ActorTestBase : TestKit
     {
         // Cleanup: Schema droppen
         await DocumentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-        Shutdown();
         ((IDisposable)ServiceProvider).Dispose();
         DocumentStore.Dispose();
     }

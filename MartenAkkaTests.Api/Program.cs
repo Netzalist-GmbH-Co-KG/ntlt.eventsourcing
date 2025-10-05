@@ -1,4 +1,4 @@
-using Akka.Hosting;
+// Akka.Hosting removed - no longer needed
 using JasperFx.Events.Projections;
 using Marten;
 using MartenAkkaTests.Api.Common;
@@ -117,20 +117,7 @@ builder.Services.AddMarten(options =>
     })
     .UseLightweightSessions();
 
-builder.Services.AddAkka("akka-universe", (akkaConfigurationBuilder, sp) =>
-{
-    akkaConfigurationBuilder.WithActors((system, registry) =>
-    {
-        var rebuildActor = system.ActorOf(RebuildProjectionActor.Prop(sp), "rebuildProjectionActor");
-        registry.Register<RebuildProjectionActor>(rebuildActor);
-        
-        var userManagementCmdRouter = system.ActorOf(UserManagementCmdRouter.Prop(sp), "UserManagementCmdRouter");
-        registry.Register<UserManagementCmdRouter>(userManagementCmdRouter);
-
-        var sessionManagementCmdRouter = system.ActorOf(SessionManagementCmdRouter.Prop(sp), "SessionManagementCmdRouter");
-        registry.Register<SessionManagementCmdRouter>(sessionManagementCmdRouter);
-    });
-});
+// Akka.NET removed - replaced by command services (see Phase 6 of refactoring)
 
 
 var app = builder.Build();

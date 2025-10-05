@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CQRS Event Sourcing system using Marten (PostgreSQL-based event store) with Akka.NET actors for command handling. ASP.NET Core 9.0 API with strict command/query separation.
+CQRS Event Sourcing system using Marten (PostgreSQL-based event store) with scoped command services for business logic. ASP.NET Core 9.0 API with strict command/query separation.
 
 **Philosophy**: Event Sourcing by default, CRUD only with explicit justification (see docs/architecture-decisions.md for rationale).
 
@@ -42,12 +42,11 @@ dotnet test --filter FullyQualifiedName~CreateSessionCmdHandlerTests
 
 ### CQRS Command Flow
 
-**Controller → CmdRouter → CmdHandler → Events → Projection**
+**Controller → CommandService → Events → Projection**
 
-1. **Controller** (`api/v1/cmd/*`): Receives HTTP request, extracts SessionId from auth header, calls CmdRouter via `Ask<CommandResult>`
-2. **CmdRouter**: Routes commands to appropriate CmdHandler (creates child actor per command)
-3. **CmdHandler**: Validates business rules, appends events to Marten stream, returns `CommandResult`
-4. **Projection**: Marten inline projection rebuilds aggregate state from events
+1. **Controller** (`api/v1/cmd/*`): Receives HTTP request, SessionId auto-injected via ModelBinder, calls CommandService method
+2. **CommandService**: Validates business rules, appends events to Marten stream, returns `CommandResult`
+3. **Projection**: Marten inline projection rebuilds aggregate state from events
 
 ### Query Flow
 
@@ -62,80 +61,82 @@ Each business domain (UserManagement, SessionManagement) follows this structure:
 ```
 DomainName/
 ├── DomainAggregate.cs          # Record + Projection (e.g., User, Session)
-├── DomainManagementCmdRouter.cs  # Routes commands to handlers
+├── DomainCommandService.cs     # Command service with business logic methods
 └── Cmd/
-    ├── CommandName.cs          # Contains 3 classes:
-    │   ├── CommandNameCmd      # Command record (implements ICmd)
-    │   ├── CommandNameEvent    # Event record (implements IDomainEvent)
-    │   └── CommandNameCmdHandler  # Actor handling business logic
+    └── CommandName.cs          # Contains 2 classes:
+        ├── CommandNameCmd      # Command record (implements ICmd)
+        └── CommandNameEvent    # Event record (implements IDomainEvent)
 ```
 
-**Example**: `UserManagement/Cmd/CreateUser.cs` contains `CreateUserCmd`, `UserCreatedEvent`, and `CreateUserCmdHandler`.
+**Example**: `UserManagement/Cmd/CreateUser.cs` contains `CreateUserCmd` and `UserCreatedEvent`. Business logic is in `UserCommandService.CreateUser()` method.
 
 ### Key Base Classes
 
-- **`CmdHandlerBase`**: Base actor for command handlers
-  - Provides `HandleCmdInSession()` wrapper with session validation
-  - Auto-appends `SessionActivityRecordedEvent`
-  - Handles exceptions and rolls back on failure
+- **`CommandServiceBase`**: Base class for command services
+  - Provides `ExecuteCommand()` for commands without session validation
+  - Provides `ExecuteCommandInSession()` with automatic session validation
+  - Auto-appends `SessionActivityRecordedEvent` to session activity table
+  - Handles exceptions and transaction rollback
   - Exposes `DateTimeProvider` and `GuidProvider` for testability
-
-- **`CmdRouterBase`**: Base actor for command routers
-  - Use `ForwardMessage<TCmd>(Props)` to register command handlers
 
 - **`V1CommandControllerBase`/`V1QueryControllerBase`**: Base controllers with common setup
 
 ### Session Management & Authentication
 
-- **Auth Middleware** (`SessionValidationMiddleware`): Validates Bearer token (SessionId GUID), writes to `HttpContext`
+- **Auth Middleware** (`SessionValidationMiddleware`): Validates Bearer token (SessionId GUID), loads Session aggregate, writes both to `HttpContext`
 - **Exempt routes**: `/api/v1/cmd/session/create`, `/api/auth/token`
-- **Session validation**: All commands auto-validate session is not closed via `CmdHandlerBase.HandleCmdInSession()`
-- Extract SessionId in controllers: `HttpContext.GetSessionId()`
+- **SessionId Auto-Injection**: `CmdModelBinder` automatically injects SessionId from `HttpContext` into command `SessionId` property
+- **Session validation**: Commands requiring session use `ExecuteCommandInSession()` which validates session is not closed
 
 ### Critical Patterns
 
-#### Actor DI Pattern
+#### Command Service Pattern
 ```csharp
-// ✅ CORRECT: Pass IServiceProvider, create scopes per message
-public class SomeCmdHandler : CmdHandlerBase
+public class UserCommandService : CommandServiceBase
 {
-    public SomeCmdHandler(IServiceProvider serviceProvider) : base(serviceProvider)
+    public UserCommandService(IServiceProvider serviceProvider) : base(serviceProvider)
     {
-        ReceiveAsync<SomeCmd>(async cmd => await HandleCmdInSession(HandleMessage, cmd));
     }
 
-    private async Task<CommandResult> HandleMessage(SomeCmd cmd, IDocumentSession session, Session sessionObj)
+    public async Task<CommandResult> CreateUser(CreateUserCmd cmd)
     {
-        // session is scoped to this message
-        var user = await session.LoadAsync<User>(cmd.UserId);
-        // ... business logic
-        session.Events.Append(userId, new SomeEvent(...));
-        return new CommandResult(cmd, true, resultData);
-    }
+        return await ExecuteCommandInSession(cmd, async (cmd, session, sessionObj) =>
+        {
+            // Validate business rules
+            var existingUser = await session.Query<User>()
+                .Where(u => u.UserName == cmd.UserName)
+                .FirstOrDefaultAsync();
 
-    public static Props Prop(IServiceProvider sp) =>
-        Props.Create(() => new SomeCmdHandler(sp));
+            if (existingUser != null)
+                return new CommandResult(cmd, false, null, "Username already exists");
+
+            // Append event
+            var userId = GuidProvider.NewGuid();
+            session.Events.StartStream<User>(userId,
+                new UserCreatedEvent(sessionObj.SessionId, userId, cmd.UserName, cmd.Email, DateTimeProvider.UtcNow));
+
+            return new CommandResult(cmd, true, userId);
+        });
+    }
 }
 ```
 
 #### Controller Pattern
 ```csharp
-// ✅ Commands: Inject IRequiredActor, use Ask pattern
+// ✅ Commands: Inject CommandService, use ModelBinding for auto SessionId injection
 public class UserController : V1CommandControllerBase
 {
-    private readonly IActorRef _router;
+    private readonly UserCommandService _service;
 
-    public UserController(IRequiredActor<UserManagementCmdRouter> router)
+    public UserController(UserCommandService service)
     {
-        _router = router.ActorRef;
+        _service = service;
     }
 
     [HttpPost("create")]
-    public async Task<IActionResult> Create([FromBody] CreateUserRequest req)
+    public async Task<IActionResult> Create([FromBody] CreateUserCmd cmd) // SessionId auto-injected by CmdModelBinder
     {
-        var sessionId = HttpContext.GetSessionId();
-        var result = await _router.Ask<CommandResult>(
-            new CreateUserCmd(sessionId, req.UserName, req.Email));
+        var result = await _service.CreateUser(cmd);
 
         return result.Success
             ? Ok(new { UserId = (Guid)result.ResultData })
@@ -180,53 +181,53 @@ public class UserProjection : SingleStreamProjection<User, Guid>
 }
 ```
 
-### Actor Registration (Program.cs)
+### Service Registration (Program.cs)
 ```csharp
-builder.Services.AddAkka("akka-universe", (builder, sp) =>
+// Register command services
+builder.Services.AddScoped<UserCommandService>();
+builder.Services.AddScoped<SessionCommandService>();
+builder.Services.AddScoped<RebuildProjectionService>();
+
+// Register ModelBinder for auto SessionId injection
+builder.Services.AddControllers(options =>
 {
-    builder.WithActors((system, registry) =>
-    {
-        var router = system.ActorOf(UserManagementCmdRouter.Prop(sp), "UserManagementCmdRouter");
-        registry.Register<UserManagementCmdRouter>(router);
-    });
+    options.ModelBinderProviders.Insert(0, new CmdModelBinderProvider());
 });
 ```
 
 ## Adding New Commands
 
-### Manual Process (see MartenAkkaTests.Api/docs/Scaffolding.md for planned automation)
+### Manual Process (see docs/Scaffolding.md for planned automation)
 
 1. **Create Command File** in `Domain/Cmd/CommandName.cs`:
    - Define `CommandNameCmd` record (implements `ICmd`)
    - Define `CommandNameEvent` record(s) (implement `IDomainEvent`)
-   - Define `CommandNameCmdHandler` class (extends `CmdHandlerBase`)
 
-2. **Register in Router**: Add `ForwardMessage<CommandNameCmd>(CommandNameCmdHandler.Prop(serviceProvider))` to `DomainManagementCmdRouter` constructor
+2. **Add Service Method**: Add `public async Task<CommandResult> CommandName(CommandNameCmd cmd)` method to `DomainCommandService`
 
 3. **Update Projection**: Add `Apply()` method in `DomainProjection` for new events
 
-4. **Add Controller Endpoint**: Create endpoint in `api/v1/cmd/DomainController.cs`
-
-5. **Define Request DTO**: Create `CommandNameRequest` record in `Controller/v1/cmd/Requests/`
+4. **Add Controller Endpoint**: Create endpoint in `api/v1/cmd/DomainController.cs` that accepts `CommandNameCmd` directly (SessionId auto-injected)
 
 ## Testing
 
-- **Framework**: NUnit with Akka.TestKit
+- **Framework**: NUnit
 - **Mocking**: NSubstitute for IDateTimeProvider/IGuidProvider
-- **Base Class**: `ActorTestBase` provides test actor system setup
-- **Pattern**: Test handlers in isolation by mocking document session
+- **Base Class**: `ServiceTestBase` provides Marten test setup with isolated schemas
+- **Pattern**: Test command services with real Marten in-memory database
 
 ## Common Pitfalls
 
-- ❌ **Never inject `IDocumentSession` into actors** → Session scope conflicts across messages
-- ❌ **Don't use inline projections for rebuilds** → Use `RebuildProjectionActor` instead
+- ❌ **Don't inject `IDocumentSession` into services** → Use `IServiceProvider` in `CommandServiceBase` for scoped sessions
+- ❌ **Don't use inline projections for rebuilds** → Use `RebuildProjectionService` instead
 - ❌ **Don't mutate state in query controllers** → Strictly read-only
-- ❌ **Don't skip session validation** → All commands must have valid SessionId (except session creation)
+- ❌ **Don't skip session validation** → Use `ExecuteCommandInSession()` for commands requiring authentication
 
 ## Conventions
 
 - **Naming**: `{Verb}{Entity}Cmd` (e.g., `CreateUserCmd`), `{Entity}{PastTense}Event` (e.g., `UserCreatedEvent`)
-- **File per Command**: Each command gets its own file containing Cmd + Event(s) + Handler
+- **File per Command**: Each command gets its own file containing Cmd + Event(s) records only
 - **Records everywhere**: Use C# records for immutable DTOs (Commands, Events, Aggregates)
 - **API Versioning**: Group by version + CQRS (`[ApiExplorerSettings(GroupName = "v1-commands")]`)
-- **Error Handling**: Return `CommandResult` with descriptive error messages, never throw in handlers
+- **Error Handling**: Return `CommandResult` with descriptive error messages, never throw in service methods
+- **No Request DTOs**: Controllers accept `ICmd` records directly with auto-injected SessionId

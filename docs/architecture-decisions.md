@@ -1,4 +1,4 @@
-# Architecture Decisions: Event Sourcing + Akka.NET
+# Architecture Decisions: Event Sourcing with Marten
 
 ## Core Philosophy
 
@@ -22,47 +22,49 @@ With Claude/Copilot, the boilerplate overhead of ES is eliminated:
 ## Technology Stack
 
 - **Event Store**: Marten 8.11 (PostgreSQL-based)
-- **Actor System**: Akka.NET 1.5.51 + Akka.Hosting
+- **Command Handling**: Scoped services with transactional sessions
 - **Framework**: ASP.NET Core 9.0
 - **Projections**: Inline (strong consistency) and Async (eventual consistency)
+- **Session Activity Tracking**: CRUD table (non-event-sourced) for performance
 
 ## Architectural Patterns
 
-### 1. Actor-Based Aggregates
+### 1. Command Service Pattern
 
 ```csharp
-public class SomethingActor : ReceiveActor
+public class UserCommandService : CommandServiceBase
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public SomethingActor(IServiceProvider serviceProvider)
+    public UserCommandService(IServiceProvider serviceProvider) : base(serviceProvider)
     {
-        _serviceProvider = serviceProvider;
-        ReceiveAsync<SomethingHappenedCommand>(async cmd => await HandleMessage(cmd));
     }
 
-    private async Task HandleMessage(SomethingHappenedCommand cmd)
+    public async Task<CommandResult> CreateUser(CreateUserCmd cmd)
     {
-        // Create scoped session for each message
-        using var scope = _serviceProvider.CreateScope();
-        var session = scope.ServiceProvider.GetService<IDocumentSession>();
+        return await ExecuteCommandInSession(cmd, async (cmd, session, sessionObj) =>
+        {
+            // Validate business rules
+            var existingUser = await session.Query<User>()
+                .FirstOrDefaultAsync(u => u.UserName == cmd.UserName);
 
-        session.Events.Append(cmd.Id, new SomethingHappened(cmd.Id, DateTime.Now.ToShortTimeString()));
-        await session.SaveChangesAsync();
+            if (existingUser != null)
+                return new CommandResult(cmd, false, null, "Username exists");
 
-        // Reply with result
-        Sender.Tell(new HandledOkNotification(cmd.Id, newCounter));
+            // Append event
+            var userId = GuidProvider.NewGuid();
+            session.Events.StartStream<User>(userId,
+                new UserCreatedEvent(sessionObj.SessionId, userId, cmd.UserName, cmd.Email, DateTimeProvider.UtcNow));
+
+            return new CommandResult(cmd, true, userId);
+        });
     }
-
-    public static Props Prop(IServiceProvider serviceProvider) =>
-        Props.Create(() => new SomethingActor(serviceProvider));
 }
 ```
 
 **Key Learnings:**
-- ✅ Pass `IServiceProvider` to actors, create scopes per message
-- ✅ Use `Ask` pattern with typed responses (not fire-and-forget `Tell`)
-- ✅ Register actors via `Akka.Hosting` for clean DI integration
+- ✅ Inherit from `CommandServiceBase` for DI and helper methods
+- ✅ Use `ExecuteCommandInSession()` for automatic session validation and activity tracking
+- ✅ Services are scoped, one instance per HTTP request
+- ✅ Transactional: changes auto-commit or rollback on exception
 
 ### 2. Projection Pattern
 
@@ -84,45 +86,49 @@ public class SomethingCounterProjection : SingleStreamProjection<SomethingCounte
 ### 3. Controller Integration
 
 ```csharp
-public class TestController : ControllerBase
+public class UserController : V1CommandControllerBase
 {
-    private readonly IActorRef _somethingActor;
-    private readonly IDocumentStore _store; // NOT IDocumentSession!
+    private readonly UserCommandService _service;
 
-    public TestController(
-        IRequiredActor<SomethingActor> somethingActor,
-        IDocumentStore store)
+    public UserController(UserCommandService service)
     {
-        _somethingActor = somethingActor.ActorRef;
+        _service = service;
+    }
+
+    [HttpPost("create")]
+    public async Task<IActionResult> Create([FromBody] CreateUserCmd cmd) // SessionId auto-injected
+    {
+        var result = await _service.CreateUser(cmd);
+        return result.Success
+            ? Ok(new { UserId = (Guid)result.ResultData })
+            : StatusCode(500, new { result.ErrorMessage });
+    }
+}
+
+public class UserQueryController : V1QueryControllerBase
+{
+    private readonly IDocumentStore _store;
+
+    public UserQueryController(IDocumentStore store)
+    {
         _store = store;
     }
 
-    [HttpGet("/test")]
-    public async Task<IActionResult> Get()
+    [HttpGet("{userId:guid}")]
+    public async Task<IActionResult> Get(Guid userId)
     {
-        var reply = await _somethingActor.Ask<HandledOkNotification>(
-            new SomethingActor.SomethingHappenedCommand(id),
-            TimeSpan.FromSeconds(30)
-        );
-        return Ok($"Accepted: {reply.NewCounter}");
-    }
-
-    [HttpGet("/query")]
-    public async Task<IActionResult> Query()
-    {
-        // Create session manually for queries
         await using var session = _store.LightweightSession();
-        var counter = await session.LoadAsync<SomethingCounter>(id);
-        return Ok(counter);
+        var user = await session.LoadAsync<User>(userId);
+        return user != null ? Ok(user) : NotFound();
     }
 }
 ```
 
 **Key Learnings:**
-- ✅ Inject `IRequiredActor<T>` for type-safe actor access
-- ✅ Inject `IDocumentStore` (not `IDocumentSession`) in controllers
+- ✅ Inject command services directly (scoped lifetime)
+- ✅ Commands accepted via `[FromBody]` with auto SessionId injection via `CmdModelBinder`
+- ✅ Inject `IDocumentStore` (not `IDocumentSession`) for queries
 - ✅ Create lightweight sessions per query
-- ✅ Use `Ask` with timeout for proper error handling
 
 ### 4. DI Registration (Program.cs)
 
@@ -131,40 +137,40 @@ public class TestController : ControllerBase
 builder.Services.AddMarten(options =>
 {
     options.Connection(connectionString);
-    options.Projections.Add<SomethingCounterProjection>(ProjectionLifecycle.Inline);
+    options.Projections.Add<UserProjection>(ProjectionLifecycle.Inline);
+    options.Projections.Add<SessionProjection>(ProjectionLifecycle.Inline);
 })
 .UseLightweightSessions();
 
-// Akka.Hosting
-builder.Services.AddAkka("akka-universe", (builder, sp) =>
+// Command Services
+builder.Services.AddScoped<UserCommandService>();
+builder.Services.AddScoped<SessionCommandService>();
+builder.Services.AddScoped<RebuildProjectionService>();
+
+// Model Binder for SessionId auto-injection
+builder.Services.AddControllers(options =>
 {
-    builder.WithActors((system, registry) =>
-    {
-        var actor = system.ActorOf(SomethingActor.Prop(sp), "somethingActor");
-        registry.Register<SomethingActor>(actor);
-    });
+    options.ModelBinderProviders.Insert(0, new CmdModelBinderProvider());
 });
 ```
 
 **Key Learnings:**
-- ✅ Use `Akka.Hosting` instead of manual `ActorSystem` lifecycle
 - ✅ Register projections at startup
-- ✅ Pass `IServiceProvider` to actor `Props` for DI access
+- ✅ Command services are scoped (one per HTTP request)
+- ✅ `CmdModelBinder` automatically injects SessionId from HttpContext into commands
 
 ## Operational Patterns
 
 ### Projection Rebuild
 
 ```csharp
-// RebuildProjectionActor allows manual projection rebuild
-[HttpGet("/rebuild")]
-public async Task<IActionResult> RebuildProjections([FromQuery] string? projection = null)
+[HttpPost("rebuild")]
+public async Task<IActionResult> RebuildProjections([FromBody] RebuildProjectionCommand cmd)
 {
-    var result = await _rebuildActor.Ask<object>(
-        new RebuildProjectionActor.RebuildProjectionCommand(projection),
-        TimeSpan.FromMinutes(5)
-    );
-    // Returns stats of rebuilt projections
+    var result = await _rebuildService.RebuildProjection(cmd);
+    return result.Success
+        ? Ok(new { Message = result.ResultData })
+        : StatusCode(500, new { result.ErrorMessage });
 }
 ```
 
@@ -188,14 +194,14 @@ CRUD requires **explicit justification**:
 ## Common Pitfalls
 
 ### ❌ Projection Issues
-- **Inline projections don't rebuild**: Delete projection docs manually or use rebuild actor
+- **Inline projections don't rebuild**: Delete projection docs manually or use `RebuildProjectionService`
 
-### ❌ Actor Issues
-- **Injecting IDocumentSession**: Shared state across messages → use `IServiceProvider` + scopes
-- **Null ActorRef**: Register actors before use
+### ❌ Service Issues
+- **Injecting IDocumentSession**: Wrong scope → use `IServiceProvider` in `CommandServiceBase`
+- **Not using ExecuteCommandInSession**: Session validation bypassed → security issue
 
 ### ❌ DI Issues
-- **Session scope mismatch**: Controller gets scoped session, actor creates own → inconsistent reads
+- **Singleton services**: Command services must be scoped, not singleton
 
 ## Data Value Proposition
 
@@ -251,18 +257,21 @@ Every event is potential training data:
 
 ```
 YourCompany.Template/
-├── Domain/
-│   ├── Aggregates/          # Event-sourced entities
-│   ├── Events/              # Event definitions
-│   └── Commands/            # Command messages
-├── Actors/
-│   ├── AggregateActors/     # Business logic actors
-│   └── InfrastructureActors/ # Rebuild, Saga, etc.
-├── Projections/             # Read models
-├── Controllers/             # API endpoints
-└── Infrastructure/
-    ├── ActorRegistry.cs     # Centralized actor registration
-    └── MartenConfiguration.cs
+├── DomainName/              # Business domain (e.g., UserManagement)
+│   ├── Aggregate.cs         # Domain aggregate + projection
+│   ├── CommandService.cs    # Business logic service
+│   └── Cmd/
+│       └── CommandName.cs   # Command + Event records
+├── Controllers/
+│   ├── v1/
+│   │   ├── cmd/            # Write endpoints
+│   │   └── qry/            # Read endpoints
+│   └── auth/               # Auth endpoints
+├── Infrastructure/
+│   ├── Middleware/         # SessionValidationMiddleware
+│   └── ModelBinders/       # CmdModelBinder
+└── EventSourcing/
+    └── CommandServiceBase.cs
 ```
 
 ## Decision Framework

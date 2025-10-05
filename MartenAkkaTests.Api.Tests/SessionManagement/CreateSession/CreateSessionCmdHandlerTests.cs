@@ -1,18 +1,18 @@
-﻿using Akka.Actor;
-using MartenAkkaTests.Api.EventSourcing;
-using MartenAkkaTests.Api.SessionManagement;
+﻿using MartenAkkaTests.Api.SessionManagement;
 using MartenAkkaTests.Api.SessionManagement.Cmd;
 using MartenAkkaTests.Api.Tests.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MartenAkkaTests.Api.Tests.SessionManagement.CreateSession;
 
-public class Tests : ActorTestBase
+public class Tests : ServiceTestBase
 {
-    private IActorRef _sut;
+    private SessionCommandService _sut = null!;
+
     [SetUp]
     public void Setup()
     {
-        _sut = ActorOf(CreateSessionCmdHandler.Prop(ServiceProvider));
+        _sut = ServiceProvider.GetRequiredService<SessionCommandService>();
     }
 
     [Test]
@@ -22,8 +22,7 @@ public class Tests : ActorTestBase
         var cmd = new CreateSessionCmd();
 
         // Act
-        _sut.Tell(cmd);
-        var result = await ExpectMsgAsync<CommandResult>(TimeSpan.FromSeconds(3));
+        var result = await _sut.CreateSession(cmd);
 
         Assert.Multiple(() =>
         {
@@ -41,5 +40,4 @@ public class Tests : ActorTestBase
             Assert.That(createdSession!.SessionId, Is.EqualTo(FakeGuidProvider.Guid1));
         });
     }
-
 }

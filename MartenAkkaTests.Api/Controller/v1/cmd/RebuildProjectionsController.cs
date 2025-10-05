@@ -23,24 +23,19 @@ public class RebuildProjectionsController : V1CommandControllerBase
         try
         {
             var sessionId = HttpContext.GetSessionId();
-            var result = await _rebuildActor.Ask<object>(
-                new RebuildProjectionActor.RebuildProjectionCommand(sessionId, request.Projection),
+            var result = await _rebuildActor.Ask<CommandResult>(
+                new RebuildProjectionCommand(sessionId, request.Projection),
                 TimeSpan.FromMinutes(5));
 
-            return result switch
-            {
-                RebuildProjectionActor.RebuildCompletedNotification completed =>
-                    Ok(new
-                    {
-                        message = request.Projection != null
-                            ? $"Projection '{request.Projection}' rebuilt successfully"
-                            : "All projections rebuilt successfully",
-                        projections = completed.ProjectionStats
-                    }),
-                RebuildProjectionActor.RebuildFailedNotification failed =>
-                    StatusCode(500, $"Rebuild failed: {failed.Error}"),
-                _ => StatusCode(500, "Unknown response from rebuild actor")
-            };
+            return result.Success
+                ? Ok(new
+                {
+                    message = request.Projection != null
+                        ? $"Projection '{request.Projection}' rebuilt successfully"
+                        : "All projections rebuilt successfully",
+                    projections = result.ResultData
+                })
+                : StatusCode(500, $"Rebuild failed: {result.ErrorMessage}");
         }
         catch (Exception e)
         {

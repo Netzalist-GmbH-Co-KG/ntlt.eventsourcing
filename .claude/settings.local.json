@@ -9,7 +9,8 @@
       "Read(//mnt/wsl/**)",
       "Bash(awk:*)",
       "Bash(dotnet run:*)",
-      "Bash(ip route:*)"
+      "Bash(ip route:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

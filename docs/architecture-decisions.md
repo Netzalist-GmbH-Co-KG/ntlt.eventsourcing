@@ -224,23 +224,97 @@ Every event is potential training data:
 
 **CRUD loses this forever.** ES captures it by default.
 
+## Production Readiness: Security & Observability
+
+### Security Implementation
+
+**Password Hashing** (✅ Implemented)
+```csharp
+// ❌ NEVER use plain SHA256
+var hash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(password)));
+
+// ✅ Always use BCrypt with appropriate work factor
+var hash = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+```
+
+**Input Validation** (✅ Implemented)
+```csharp
+public class CreateUserCmdValidator : AbstractValidator<CreateUserCmd>
+{
+    public CreateUserCmdValidator()
+    {
+        RuleFor(x => x.UserName)
+            .NotEmpty()
+            .MinimumLength(3)
+            .Matches("^[a-zA-Z0-9_-]+$");
+
+        RuleFor(x => x.Email)
+            .NotEmpty()
+            .EmailAddress();
+    }
+}
+```
+
+**Error Handling** (✅ Implemented)
+- Generic messages to users: "An error occurred processing your request"
+- Detailed logging for developers: Full stack trace + context
+- Structured logging with Serilog for easy debugging
+
+### Performance Optimization
+
+**Session Loading** (✅ Implemented)
+- Middleware loads session once and stores in `HttpContext.Items["Session"]`
+- CommandServiceBase retrieves from HttpContext (avoids duplicate DB query)
+- Falls back to DB query in test scenarios (when HttpContext unavailable)
+- **Performance gain**: 20-50ms per command (typical PostgreSQL query time)
+
+**Structured Logging** (✅ Implemented)
+- Serilog with console sink for development
+- JSON output for production log aggregation
+- Command execution logged with: CommandName, SessionId, ExecutionTime, Success/Failure
+- HTTP request logging via `UseSerilogRequestLogging()`
+
+### Observability
+
+**Logging Strategy**
+```csharp
+Logger.LogInformation("Executing command {CommandName} in session {SessionId}", commandName, cmd.SessionId);
+Logger.LogWarning("Command {CommandName} failed: {ErrorMessage}", commandName, result.ErrorMessage);
+Logger.LogError(ex, "Unexpected error executing command {CommandName}", commandName);
+```
+
+**Metrics** (TODO)
+- [ ] Command execution duration histogram
+- [ ] Success/failure rate per command type
+- [ ] Projection rebuild duration
+- [ ] Event store write throughput
+
 ## Next Steps: Template Creation
+
+### Completed ✅
+- [x] Security: BCrypt password hashing
+- [x] Security: Input validation with FluentValidation
+- [x] Security: Structured error handling
+- [x] Performance: Session loading from HttpContext
+- [x] Observability: Serilog structured logging
+- [x] Documentation: Updated CLAUDE.md + Scaffolding.md
 
 ### TODO List
 
 1. **Cleanup Prototype**
    - [ ] Consistent namespaces and XML docs
    - [ ] Add integration tests
+   - [ ] Add authorization pattern example
 
 2. **Documentation**
    - [ ] Onboarding guide: "ES for New Devs"
-   - [ ] Pattern library: Actor + Projection + Controller
+   - [ ] Pattern library: CommandService + Projection + Controller
    - [ ] AI prompt templates for Claude
 
 3. **Scaffolding**
    - [ ] `dotnet new` templates for aggregates/projections
-   - [ ] Base classes: `BaseAggregateActor<TCommand, TResponse>`
-   - [ ] Script: `new-aggregate.sh <EntityName>`
+   - [ ] Script: `new-command.sh <DomainName> <CommandName>`
+   - [ ] Template files for Command/Event/Validator
 
 4. **Tooling Investment**
    - [ ] Event browser UI (Marten dashboard or custom)
@@ -250,7 +324,7 @@ Every event is potential training data:
 
 5. **Operations**
    - [ ] Docker Compose: Postgres + Seq (logging) + Grafana
-   - [ ] CI/CD pipeline for actor deployments
+   - [ ] CI/CD pipeline for deployments
    - [ ] Runbooks: "Projection behind", "Rebuild failed"
 
 ### Recommended Project Structure

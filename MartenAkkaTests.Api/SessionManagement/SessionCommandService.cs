@@ -10,7 +10,8 @@ namespace MartenAkkaTests.Api.SessionManagement;
 /// </summary>
 public class SessionCommandService : CommandServiceBase
 {
-    public SessionCommandService(IServiceProvider serviceProvider) : base(serviceProvider)
+    public SessionCommandService(IServiceProvider serviceProvider, ILogger<SessionCommandService> logger)
+        : base(serviceProvider, logger)
     {
     }
 

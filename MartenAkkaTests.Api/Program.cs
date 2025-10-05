@@ -1,4 +1,5 @@
 // Akka.Hosting removed - no longer needed
+using FluentValidation;
 using JasperFx.Events.Projections;
 using Marten;
 using MartenAkkaTests.Api.Common;
@@ -10,9 +11,23 @@ using MartenAkkaTests.Api.UserManagement;
 using MartenAkkaTests.Api.UserManagement.Cmd;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
+using Serilog;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
+    .CreateLogger();
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Use Serilog for logging
+builder.Host.UseSerilog();
 
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
@@ -90,6 +105,13 @@ builder.Services.AddControllers(options =>
     // This automatically injects SessionId from HttpContext, eliminating Request DTOs
     options.ModelBinderProviders.Insert(0, new MartenAkkaTests.Api.Infrastructure.ModelBinders.CmdModelBinderProvider());
 });
+
+// FluentValidation - automatically discovers and registers all validators in assembly
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+// Register HttpContextAccessor for session retrieval optimization
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddTransient<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddTransient<IGuidProvider, GuidProvider>();
 
@@ -123,6 +145,8 @@ builder.Services.AddMarten(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseSerilogRequestLogging(); // Log HTTP requests
+
 app.UseHttpsRedirection();
 
 // IMPORTANT: Middleware must be registered BEFORE MapControllers
@@ -144,4 +168,16 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.Run();
+try
+{
+    Log.Information("Starting web application");
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

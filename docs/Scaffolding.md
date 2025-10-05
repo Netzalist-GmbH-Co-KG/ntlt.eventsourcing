@@ -85,7 +85,8 @@ Cmd kommt auf Controller herein. Middleware hat bereits authentifiziert und Sess
 ```C#
 public class UserCommandService : CommandServiceBase
 {
-    public UserCommandService(IServiceProvider serviceProvider) : base(serviceProvider)
+    public UserCommandService(IServiceProvider serviceProvider, ILogger<UserCommandService> logger)
+        : base(serviceProvider, logger)
     {
     }
 
@@ -184,3 +185,21 @@ Die Umstellung von Akka.NET auf Command Services hat folgende Vorteile:
 4. **Klarere Dependency Injection**: Scoped Services statt IServiceProvider in Actors
 5. **Reduzierte Komplexität**: ~800 LOC weniger Code bei gleicher Funktionalität
 6. **Keine Actor-spezifischen Bugs**: Keine Deadlocks, keine Ask-Timeouts, keine Actor-Lifecycle-Issues
+
+## Production-Ready Features
+
+Seit der initialen Implementierung wurden folgende Production-Readiness Features hinzugefügt:
+
+### Security
+- **BCrypt Password Hashing**: Sichere Passwort-Hashes mit work factor 12
+- **Input Validation**: FluentValidation für Command-Validierung (siehe `CreateUserCmdValidator`)
+- **Error Handling**: Generische Fehlermeldungen für User, detailliertes Logging für Entwickler
+
+### Performance
+- **Session Optimization**: Session wird aus `HttpContext` geladen (von Middleware gesetzt) statt wiederholter DB-Queries
+- **Structured Logging**: Serilog für performantes, strukturiertes Logging
+
+### Observability
+- **Command Logging**: Alle Commands werden mit Execution Time und Result geloggt
+- **Request Logging**: Automatisches HTTP Request/Response Logging
+- **Error Tracking**: Exceptions mit vollem Context (Command Name, Session ID, Stack Trace)

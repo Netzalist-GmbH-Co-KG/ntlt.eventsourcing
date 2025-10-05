@@ -10,7 +10,8 @@ namespace MartenAkkaTests.Api.EventSourcing;
 /// </summary>
 public class RebuildProjectionService : CommandServiceBase
 {
-    public RebuildProjectionService(IServiceProvider serviceProvider) : base(serviceProvider)
+    public RebuildProjectionService(IServiceProvider serviceProvider, ILogger<RebuildProjectionService> logger)
+        : base(serviceProvider, logger)
     {
     }
 

@@ -74,9 +74,11 @@ DomainName/
 
 - **`CommandServiceBase`**: Base class for command services
   - Provides `ExecuteCommand()` for commands without session validation
-  - Provides `ExecuteCommandInSession()` with automatic session validation
-  - Auto-appends `SessionActivityRecordedEvent` to session activity table
-  - Handles exceptions and transaction rollback
+  - Provides `ExecuteCommandInSession()` with automatic session validation and HttpContext optimization
+  - Session loaded from `HttpContext` (set by middleware) to avoid redundant DB queries
+  - Falls back to DB query in test scenarios
+  - Structured logging with Serilog for observability
+  - Handles exceptions and transaction rollback with proper error messages
   - Exposes `DateTimeProvider` and `GuidProvider` for testability
 
 - **`V1CommandControllerBase`/`V1QueryControllerBase`**: Base controllers with common setup
@@ -94,7 +96,8 @@ DomainName/
 ```csharp
 public class UserCommandService : CommandServiceBase
 {
-    public UserCommandService(IServiceProvider serviceProvider) : base(serviceProvider)
+    public UserCommandService(IServiceProvider serviceProvider, ILogger<UserCommandService> logger)
+        : base(serviceProvider, logger)
     {
     }
 
@@ -116,6 +119,27 @@ public class UserCommandService : CommandServiceBase
                 new UserCreatedEvent(sessionObj.SessionId, userId, cmd.UserName, cmd.Email, DateTimeProvider.UtcNow));
 
             return new CommandResult(cmd, true, userId);
+        });
+    }
+
+    public async Task<CommandResult> AddPasswordAuthentication(AddPasswordAuthenticationCmd cmd)
+    {
+        return await ExecuteCommandInSession(cmd, async (cmd, session, sessionObj) =>
+        {
+            var user = await session.LoadAsync<User>(cmd.UserId);
+            if (user == null)
+                return new CommandResult(cmd, false, null, "User not found");
+
+            if (user.Password != null)
+                return new CommandResult(cmd, false, null, "Password already set");
+
+            // Use BCrypt for secure password hashing
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(cmd.Password, workFactor: 12);
+
+            session.Events.Append(cmd.UserId,
+                new PasswordAuthenticationAddedEvent(sessionObj.SessionId, cmd.UserId, passwordHash));
+
+            return new CommandResult(cmd, true);
         });
     }
 }
@@ -181,12 +205,44 @@ public class UserProjection : SingleStreamProjection<User, Guid>
 }
 ```
 
+#### Validation Pattern (Optional but Recommended)
+```csharp
+public class CreateUserCmdValidator : AbstractValidator<CreateUserCmd>
+{
+    public CreateUserCmdValidator()
+    {
+        RuleFor(x => x.UserName)
+            .NotEmpty().WithMessage("Username is required")
+            .MinimumLength(3).WithMessage("Username must be at least 3 characters")
+            .Matches("^[a-zA-Z0-9_-]+$").WithMessage("Username can only contain letters, numbers, underscores, and hyphens");
+
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Email is required")
+            .EmailAddress().WithMessage("Invalid email format");
+    }
+}
+```
+
 ### Service Registration (Program.cs)
 ```csharp
+// Serilog for structured logging
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
 // Register command services
 builder.Services.AddScoped<UserCommandService>();
 builder.Services.AddScoped<SessionCommandService>();
 builder.Services.AddScoped<RebuildProjectionService>();
+
+// Register HttpContextAccessor for session optimization
+builder.Services.AddHttpContextAccessor();
+
+// FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // Register ModelBinder for auto SessionId injection
 builder.Services.AddControllers(options =>
@@ -208,6 +264,20 @@ builder.Services.AddControllers(options =>
 3. **Update Projection**: Add `Apply()` method in `DomainProjection` for new events
 
 4. **Add Controller Endpoint**: Create endpoint in `api/v1/cmd/DomainController.cs` that accepts `CommandNameCmd` directly (SessionId auto-injected)
+
+## Security
+
+- **Password Hashing**: BCrypt with work factor 12 (NEVER use plain SHA256)
+- **Input Validation**: FluentValidation for command validation (see `CreateUserCmdValidator` example)
+- **Session Security**: Bearer token authentication via middleware
+- **Error Handling**: Generic error messages to users, detailed logging for debugging
+
+## Logging & Observability
+
+- **Structured Logging**: Serilog with JSON output
+- **Request Logging**: Automatic HTTP request/response logging
+- **Command Logging**: All commands logged with execution time and result
+- **Error Tracking**: Exceptions logged with full context (command name, session ID, stack trace)
 
 ## Testing
 

@@ -2,7 +2,6 @@ using Marten;
 using MartenAkkaTests.Api.EventSourcing;
 using MartenAkkaTests.Api.SessionManagement;
 using MartenAkkaTests.Api.UserManagement.Cmd;
-using System.Security.Cryptography;
 
 namespace MartenAkkaTests.Api.UserManagement;
 
@@ -12,7 +11,8 @@ namespace MartenAkkaTests.Api.UserManagement;
 /// </summary>
 public class UserCommandService : CommandServiceBase
 {
-    public UserCommandService(IServiceProvider serviceProvider) : base(serviceProvider)
+    public UserCommandService(IServiceProvider serviceProvider, ILogger<UserCommandService> logger)
+        : base(serviceProvider, logger)
     {
     }
 
@@ -53,7 +53,8 @@ public class UserCommandService : CommandServiceBase
             if (existingUser.Password != null)
                 return new CommandResult(cmd, false, null, "User already has a password authentication");
 
-            var passwordHash = Convert.ToBase64String(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(cmd.Password)));
+            // Use BCrypt for secure password hashing with work factor 12
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(cmd.Password, workFactor: 12);
 
             session.Events.Append(cmd.UserId,
                 new PasswordAuthenticationAddedEvent(sessionObj.SessionId, cmd.UserId, passwordHash));

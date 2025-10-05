@@ -51,17 +51,24 @@ public class SessionValidationMiddleware
         await using var session = documentStore.LightweightSession();
         var validSession = await session.Query<Session>()
             .Where(s => s.SessionId == sessionId && !s.Closed)
-            .AnyAsync();
+            .FirstOrDefaultAsync();
 
-        if (!validSession)
+        if (validSession == null)
         {
             context.Response.StatusCode = 401;
             await context.Response.WriteAsJsonAsync(new { error = "Invalid or closed session" });
             return;
         }
 
-        // Store SessionId in HttpContext for controllers
+        // Store both SessionId AND Session object in HttpContext for controllers
+        // This avoids duplicate DB queries in command handlers
         context.Items["SessionId"] = sessionId;
+        context.Items["Session"] = validSession;
+
+        // Track session activity in CRUD table (not event sourced)
+        var activity = new SessionActivity(sessionId, DateTime.UtcNow);
+        session.Store(activity);
+        await session.SaveChangesAsync();
 
         await _next(context);
     }

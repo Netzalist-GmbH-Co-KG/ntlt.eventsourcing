@@ -103,8 +103,6 @@ public abstract class CmdHandlerBase : ReceiveActor
         {
             documentSession.EjectAllPendingChanges();
         }
-        documentSession.Events.Append(session.SessionId,
-            new SessionActivityRecordedEvent(session.SessionId, DateTimeProvider.UtcNow));
 
         await documentSession.SaveChangesAsync();
         Sender.Tell(result);

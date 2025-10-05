@@ -98,7 +98,9 @@ builder.Services.AddMarten(options =>
             .Index(x => x.Email, idx => idx.IsUnique = true);
         
         options.Schema.For<Session>().Identity(x => x.SessionId);
-        options.Schema.For<User>().Identity(x => x.UserId);    
+        options.Schema.For<User>().Identity(x => x.UserId);
+
+        options.Schema.For<SessionActivity>().Identity(x => x.SessionId);
 
         options.Projections.Add<UserProjection>(ProjectionLifecycle.Inline);
         options.Projections.Add<SessionProjection>(ProjectionLifecycle.Inline);

@@ -10,7 +10,10 @@
       "Bash(awk:*)",
       "Bash(dotnet run:*)",
       "Bash(ip route:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(git config:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []

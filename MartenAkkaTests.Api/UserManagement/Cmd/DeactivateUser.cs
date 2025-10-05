@@ -39,8 +39,7 @@ public class DeactivateUserCmdHandler : CmdHandlerBase
 
         documentSession.Events.Append(cmd.UserId,
             new UserDeactivatedEvent(session.SessionId, cmd.UserId));
-        documentSession.Events.Append(session.SessionId,
-            new SessionActivityRecordedEvent(session.SessionId, DateTimeProvider.UtcNow));
+
         return new CommandResult(cmd,true);
     }
    

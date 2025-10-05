@@ -37,8 +37,6 @@ public class AddPasswordAuthenticationCmdHandler : CmdHandlerBase
 
         documentSession.Events.Append(cmd.UserId,
             new PasswordAuthenticationAddedEvent(session.SessionId, cmd.UserId, passwordHash));
-        documentSession.Events.Append(session.SessionId,
-            new SessionActivityRecordedEvent(session.SessionId, DateTimeProvider.UtcNow));
         return new CommandResult(cmd,true);
     }
    

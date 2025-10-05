@@ -3,7 +3,7 @@
 namespace MartenAkkaTests.Api.SessionManagement.Cmd;
 
 // Cmd
-public record EndSessionCmd(Guid? SessionId, string Reason) : ICmd;
+public record EndSessionCmd(Guid? SessionId, Guid SessionToEndId, string Reason) : ICmd;
 
 // Event
-public record SessionEndedEvent(Guid SessionId, string Reason, DateTime EndedAt);
+public record SessionEndedEvent(Guid SessionId, Guid? EndedSessionId, string Reason, DateTime EndedAt);

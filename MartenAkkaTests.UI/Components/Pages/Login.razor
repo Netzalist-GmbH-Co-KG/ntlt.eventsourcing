@@ -1,0 +1,97 @@
+@page "/login"
+@using MartenAkkaTests.UI.Components.UI
+@using MartenAkkaTests.UI.Services
+@inject ApiClient ApiClient
+@inject SessionService SessionService
+@inject NavigationManager Navigation
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-logo">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+            </div>
+            <h1 class="login-title">CQRS Demo</h1>
+            <p class="login-subtitle">Event Sourcing with Marten</p>
+        </div>
+
+        <div class="login-content">
+            <p class="login-description">
+                Welcome to the CQRS Event Sourcing demo application.
+                Click the button below to create a new session and explore the system.
+            </p>
+
+            <div class="login-features">
+                <div class="feature-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Event-sourced aggregates</span>
+                </div>
+                <div class="feature-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Command/Query separation</span>
+                </div>
+                <div class="feature-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Real-time projections</span>
+                </div>
+            </div>
+
+            <Button OnClick="RunLogin" Class="login-button" Variant="Button.ButtonVariant.Primary" Size="Button.ButtonSize.Large">
+                @if (_isLoggingIn)
+                {
+                    <span>Creating Session...</span>
+                }
+                else
+                {
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                        <polyline points="10 17 15 12 10 7"></polyline>
+                        <line x1="15" y1="12" x2="3" y2="12"></line>
+                    </svg>
+                    <span>Start Session</span>
+                }
+            </Button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _isLoggingIn = false;
+
+    protected override void OnInitialized()
+    {
+        // If already logged in, redirect to dashboard
+        if (SessionService.HasSession)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private async Task RunLogin()
+    {
+        _isLoggingIn = true;
+        StateHasChanged();
+
+        var success = await ApiClient.CreateSessionAsync();
+
+        if (success)
+        {
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            _isLoggingIn = false;
+            StateHasChanged();
+        }
+    }
+}

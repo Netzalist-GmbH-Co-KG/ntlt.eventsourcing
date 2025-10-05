@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MartenAkkaTests.Api", "Mart
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MartenAkkaTests.Api.Tests", "MartenAkkaTests.Api.Tests\MartenAkkaTests.Api.Tests.csproj", "{36C163F4-B335-4448-BEA8-1FB0971BC37D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MartenAkkaTests.UI", "MartenAkkaTests.UI\MartenAkkaTests.UI.csproj", "{3E68FD77-B92D-4906-8CF6-F7DC7CF72F42}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{36C163F4-B335-4448-BEA8-1FB0971BC37D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{36C163F4-B335-4448-BEA8-1FB0971BC37D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36C163F4-B335-4448-BEA8-1FB0971BC37D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E68FD77-B92D-4906-8CF6-F7DC7CF72F42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E68FD77-B92D-4906-8CF6-F7DC7CF72F42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E68FD77-B92D-4906-8CF6-F7DC7CF72F42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E68FD77-B92D-4906-8CF6-F7DC7CF72F42}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -30,8 +30,8 @@ public class SessionCommandService : CommandServiceBase
     {
         return await ExecuteCommandInSession(cmd, async (cmd, session, sessionObj) =>
         {
-            session.Events.Append(sessionObj.SessionId,
-                new SessionEndedEvent(sessionObj.SessionId, cmd.Reason, DateTimeProvider.UtcNow));
+            session.Events.Append(cmd.SessionToEndId,
+                new SessionEndedEvent(cmd.SessionId!.Value, cmd.SessionToEndId, cmd.Reason, DateTimeProvider.UtcNow));
 
             return new CommandResult(cmd, true);
         });

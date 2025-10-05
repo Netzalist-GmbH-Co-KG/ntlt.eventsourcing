@@ -1,0 +1,70 @@
+@namespace MartenAkkaTests.UI.Components.UI
+@using MartenAkkaTests.UI.Services
+@inject ToastService ToastService
+@implements IDisposable
+
+<div class="toast-container">
+    @foreach (var toast in _toasts)
+    {
+        <div class="toast toast-@toast.Type.ToString().ToLower() @(toast.IsVisible ? "toast-show" : "toast-hide")">
+            <div class="toast-content">
+                <span class="toast-icon">@GetIcon(toast.Type)</span>
+                <span class="toast-message">@toast.Message</span>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ToastMessage> _toasts = new();
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnShow += ShowToast;
+    }
+
+    private void ShowToast(string message, ToastType type)
+    {
+        var toast = new ToastMessage
+        {
+            Message = message,
+            Type = type,
+            IsVisible = true
+        };
+
+        _toasts.Add(toast);
+        StateHasChanged();
+
+        _ = Task.Delay(3000).ContinueWith(_ =>
+        {
+            toast.IsVisible = false;
+            InvokeAsync(StateHasChanged);
+
+            _ = Task.Delay(300).ContinueWith(__ =>
+            {
+                _toasts.Remove(toast);
+                InvokeAsync(StateHasChanged);
+            });
+        });
+    }
+
+    private string GetIcon(ToastType type) => type switch
+    {
+        ToastType.Success => "✓",
+        ToastType.Error => "✕",
+        ToastType.Info => "ℹ",
+        _ => "ℹ"
+    };
+
+    public void Dispose()
+    {
+        ToastService.OnShow -= ShowToast;
+    }
+
+    private class ToastMessage
+    {
+        public string Message { get; set; } = string.Empty;
+        public ToastType Type { get; set; }
+        public bool IsVisible { get; set; }
+    }
+}

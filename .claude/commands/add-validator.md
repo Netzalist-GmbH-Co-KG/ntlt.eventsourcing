@@ -4,7 +4,7 @@ Erstelle einen FluentValidation Validator für ein existierendes Command.
 
 ## Input
 
-User gibt Command-Namen an (z.B. `CreateUserCmd`).
+User gibt Command-Namen an: $ARGUMENTS
 
 ## Workflow
 

@@ -108,6 +108,7 @@ builder.Services.AddControllers(options =>
 });
 
 // FluentValidation - automatically discovers and registers all validators in assembly
+// Note: Automatic validation must be triggered manually in controllers or via action filters
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // Register HttpContextAccessor for session retrieval optimization

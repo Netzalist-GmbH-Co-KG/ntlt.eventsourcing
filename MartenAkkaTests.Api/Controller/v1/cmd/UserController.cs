@@ -45,4 +45,15 @@ public class UserController : V1CommandControllerBase
 
         return StatusCode(500, new { result.ErrorMessage });
     }
+
+    [HttpPost("change-email")]
+    public async Task<IActionResult> ChangeEmail([FromBody] ChangeUserEmailCmd cmd)
+    {
+        // SessionId is automatically injected by CmdModelBinder
+        var result = await _userService.ChangeUserEmail(cmd);
+
+        if (result.Success) return Ok();
+
+        return StatusCode(500, new { result.ErrorMessage });
+    }
 }

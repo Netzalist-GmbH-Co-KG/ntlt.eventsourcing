@@ -12,7 +12,9 @@ Du bist ein Experte für CQRS Event Sourcing mit Marten. Erweitere ein **existie
 
 ### 1. Analysiere Anforderung
 
-User beschreibt, was erweitert werden soll. Identifiziere:
+$ARGUMENTS
+
+Identifiziere:
 - **Aggregate**: Welches? (User, Session, ...)
 - **Neue Property**: Welche? (Optional)
 - **Neues Event**: Welches? (Optional)

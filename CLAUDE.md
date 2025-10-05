@@ -11,6 +11,11 @@ CQRS Event Sourcing system using Marten (PostgreSQL-based event store) with scop
 ## Development Commands
 
 ### Build & Run
+
+WICHTIG: Du arbeitest unter WSL. Hier ist aktuell nur
+.NET 8 installiert. Zum bauen und testen musst Du Windows
+via "powershell" verwenden!
+
 ```bash
 # Build solution
 dotnet build

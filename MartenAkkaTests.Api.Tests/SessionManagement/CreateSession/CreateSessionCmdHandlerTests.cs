@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MartenAkkaTests.Api.Tests.SessionManagement.CreateSession;
 
-public class Tests : ServiceTestBase
+public class Tests : IntegrationTestBase
 {
     private SessionCommandService _sut = null!;
 

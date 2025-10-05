@@ -1,4 +1,4 @@
-﻿using JasperFx;
+using JasperFx;
 using JasperFx.Events.Projections;
 using Marten;
 using MartenAkkaTests.Api.Common;
@@ -8,7 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MartenAkkaTests.Api.Tests.Infrastructure;
 
-public abstract class ServiceTestBase
+[Obsolete("Use ServiceTestBase instead - this uses full integration setup")]
+public abstract class IntegrationTestBase
 {
     protected IServiceProvider ServiceProvider { get; private set; } = null!;
     protected IDocumentStore DocumentStore { get; private set; } = null!;

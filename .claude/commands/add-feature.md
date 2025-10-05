@@ -4,6 +4,8 @@ Du bist ein Experte für CQRS Event Sourcing mit Marten. Implementiere ein neues
 
 ## Input vom User
 
+$ARGUMENTS
+
 Der User beschreibt das Feature verbal. Du analysierst die Beschreibung und identifizierst:
 1. **Domain**: Welcher Bereich? (UserManagement, SessionManagement, oder neu?)
 2. **Aggregate**: Welches Aggregate wird verändert? (User, Session, oder neu?)

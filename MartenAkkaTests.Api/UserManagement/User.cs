@@ -35,4 +35,9 @@ public class UserProjection : SingleStreamProjection<User, Guid>
     {
         return user with { IsDeactivated = true };
     }
+
+    public User Apply(User user, UserEmailChangedEvent evt)
+    {
+        return user with { Email = evt.NewEmail, LastUpdatedAt = evt.Timestamp };
+    }
 }

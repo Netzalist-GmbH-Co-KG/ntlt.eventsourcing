@@ -80,4 +80,34 @@ public class UserCommandService : CommandServiceBase
             return new CommandResult(cmd, true);
         });
     }
+
+    public async Task<CommandResult> ChangeUserEmail(ChangeUserEmailCmd cmd)
+    {
+        return await ExecuteCommandInSession(cmd, async (cmd, session, sessionObj) =>
+        {
+            var user = await session.LoadAsync<User>(cmd.UserId);
+
+            if (user == null)
+                return new CommandResult(cmd, false, null, "User not found");
+
+            if (user.IsDeactivated)
+                return new CommandResult(cmd, false, null, "Cannot change email for deactivated user");
+
+            if (user.Email == cmd.NewEmail)
+                return new CommandResult(cmd, false, null, "New email is the same as current email");
+
+            // Check if new email is already in use
+            var existingUserWithEmail = await session.Query<User>()
+                .Where(u => u.Email == cmd.NewEmail)
+                .FirstOrDefaultAsync();
+
+            if (existingUserWithEmail != null)
+                return new CommandResult(cmd, false, null, "Email already in use");
+
+            session.Events.Append(cmd.UserId,
+                new UserEmailChangedEvent(sessionObj.SessionId, cmd.UserId, cmd.NewEmail, DateTimeProvider.UtcNow));
+
+            return new CommandResult(cmd, true);
+        });
+    }
 }

@@ -10,12 +10,18 @@ public record Session(Guid SessionId, DateTime CreatedAt, DateTime LastAccessedA
 // Projection
 public class SessionProjection : SingleStreamProjection<Session, Guid>
 {
-    public Session Create(SessionCreatedEvent evt) =>
-        new (evt.SessionId, evt.CreatedAt, evt.CreatedAt, false);
-    
-    public Session Apply(Session session, SessionActivityRecordedEvent evt) =>
-        session with { LastAccessedAt = evt.AccessedAt };
+    public Session Create(SessionCreatedEvent evt)
+    {
+        return new Session(evt.SessionId, evt.CreatedAt, evt.CreatedAt, false);
+    }
 
-    public Session Apply(Session session, SessionEndedEvent evt) =>
-        session with { LastAccessedAt = evt.EndedAt, Closed = true };
+    public Session Apply(Session session, SessionActivityRecordedEvent evt)
+    {
+        return session with { LastAccessedAt = evt.AccessedAt };
+    }
+
+    public Session Apply(Session session, SessionEndedEvent evt)
+    {
+        return session with { LastAccessedAt = evt.EndedAt, Closed = true };
+    }
 }

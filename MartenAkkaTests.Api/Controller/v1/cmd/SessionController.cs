@@ -1,4 +1,3 @@
-using MartenAkkaTests.Api.EventSourcing;
 using MartenAkkaTests.Api.SessionManagement;
 using MartenAkkaTests.Api.SessionManagement.Cmd;
 using Microsoft.AspNetCore.Mvc;
@@ -18,10 +17,7 @@ public class SessionController : V1CommandControllerBase
     public async Task<IActionResult> Create()
     {
         var result = await _sessionService.CreateSession(new CreateSessionCmd());
-        if (result.Success && result.ResultData != null)
-        {
-            return Ok(new { SessionId = (Guid)result.ResultData });
-        }
+        if (result.Success && result.ResultData != null) return Ok(new { SessionId = (Guid)result.ResultData });
 
         return StatusCode(500, new { result.ErrorMessage });
     }
@@ -32,10 +28,7 @@ public class SessionController : V1CommandControllerBase
         // SessionId is automatically injected by CmdModelBinder
         var result = await _sessionService.EndSession(cmd);
 
-        if (result.Success)
-        {
-            return Ok();
-        }
+        if (result.Success) return Ok();
 
         return StatusCode(500, new { result.ErrorMessage });
     }

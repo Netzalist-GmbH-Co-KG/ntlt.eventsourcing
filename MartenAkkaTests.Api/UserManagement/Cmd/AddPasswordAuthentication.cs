@@ -1,8 +1,4 @@
-﻿using System.Security.Cryptography;
-using Marten;
-using MartenAkkaTests.Api.EventSourcing;
-using MartenAkkaTests.Api.SessionManagement;
-using MartenAkkaTests.Api.SessionManagement.Evt;
+﻿using MartenAkkaTests.Api.EventSourcing;
 
 namespace MartenAkkaTests.Api.UserManagement.Cmd;
 
@@ -11,4 +7,3 @@ public record AddPasswordAuthenticationCmd(Guid? SessionId, Guid UserId, string 
 
 // Events
 public record PasswordAuthenticationAddedEvent(Guid SessionId, Guid UserId, string PasswordHash);
-

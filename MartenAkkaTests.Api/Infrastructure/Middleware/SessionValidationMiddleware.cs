@@ -4,17 +4,18 @@ using MartenAkkaTests.Api.SessionManagement;
 namespace MartenAkkaTests.Api.Infrastructure.Middleware;
 
 /// <summary>
-/// Middleware that validates SessionId from Bearer token and injects it into HttpContext
+///     Middleware that validates SessionId from Bearer token and injects it into HttpContext
 /// </summary>
 public class SessionValidationMiddleware
 {
-    private readonly RequestDelegate _next;
     private static readonly HashSet<string> UnauthenticatedPaths = new()
     {
         "/swagger",
         "/api/v1/cmd/session/create",
         "/api/auth/token"
     };
+
+    private readonly RequestDelegate _next;
 
     public SessionValidationMiddleware(RequestDelegate next)
     {
@@ -35,7 +36,8 @@ public class SessionValidationMiddleware
         if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
             context.Response.StatusCode = 401;
-            await context.Response.WriteAsJsonAsync(new { error = "Missing or invalid Authorization header. Use 'Bearer {sessionId}'" });
+            await context.Response.WriteAsJsonAsync(new
+                { error = "Missing or invalid Authorization header. Use 'Bearer {sessionId}'" });
             return;
         }
 

@@ -1,12 +1,11 @@
-using Marten;
 using MartenAkkaTests.Api.EventSourcing;
 using MartenAkkaTests.Api.SessionManagement.Cmd;
 
 namespace MartenAkkaTests.Api.SessionManagement;
 
 /// <summary>
-/// Command service for session management operations.
-/// Replaces SessionManagementCmdRouter and session command handler actors.
+///     Command service for session management operations.
+///     Replaces SessionManagementCmdRouter and session command handler actors.
 /// </summary>
 public class SessionCommandService : CommandServiceBase
 {

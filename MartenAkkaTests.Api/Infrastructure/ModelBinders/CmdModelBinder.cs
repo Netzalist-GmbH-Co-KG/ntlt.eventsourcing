@@ -1,23 +1,20 @@
+using System.Text.Json;
 using MartenAkkaTests.Api.EventSourcing;
 using MartenAkkaTests.Api.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using System.Text.Json;
 
 namespace MartenAkkaTests.Api.Infrastructure.ModelBinders;
 
 /// <summary>
-/// Custom model binder for ICmd types.
-/// Automatically injects SessionId from HttpContext into commands.
-/// This eliminates the need for separate Request DTOs.
+///     Custom model binder for ICmd types.
+///     Automatically injects SessionId from HttpContext into commands.
+///     This eliminates the need for separate Request DTOs.
 /// </summary>
 public class CmdModelBinder : IModelBinder
 {
     public async Task BindModelAsync(ModelBindingContext bindingContext)
     {
-        if (bindingContext == null)
-        {
-            throw new ArgumentNullException(nameof(bindingContext));
-        }
+        if (bindingContext == null) throw new ArgumentNullException(nameof(bindingContext));
 
         // Only bind ICmd types
         if (!typeof(ICmd).IsAssignableFrom(bindingContext.ModelType))
@@ -58,7 +55,6 @@ public class CmdModelBinder : IModelBinder
             // Use reflection to set SessionId property
             var sessionIdProperty = bindingContext.ModelType.GetProperty("SessionId");
             if (sessionIdProperty != null && sessionIdProperty.CanWrite)
-            {
                 try
                 {
                     var sessionId = httpContext.GetSessionId();
@@ -69,7 +65,6 @@ public class CmdModelBinder : IModelBinder
                     // SessionId not in context - command might not require authentication
                     // (e.g., CreateSessionCmd). Leave SessionId as null.
                 }
-            }
 
             bindingContext.Result = ModelBindingResult.Success(cmd);
         }
@@ -87,22 +82,16 @@ public class CmdModelBinder : IModelBinder
 }
 
 /// <summary>
-/// ModelBinderProvider for CmdModelBinder.
-/// Registers the binder for all ICmd types.
+///     ModelBinderProvider for CmdModelBinder.
+///     Registers the binder for all ICmd types.
 /// </summary>
 public class CmdModelBinderProvider : IModelBinderProvider
 {
     public IModelBinder? GetBinder(ModelBinderProviderContext context)
     {
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
+        if (context == null) throw new ArgumentNullException(nameof(context));
 
-        if (typeof(ICmd).IsAssignableFrom(context.Metadata.ModelType))
-        {
-            return new CmdModelBinder();
-        }
+        if (typeof(ICmd).IsAssignableFrom(context.Metadata.ModelType)) return new CmdModelBinder();
 
         return null;
     }

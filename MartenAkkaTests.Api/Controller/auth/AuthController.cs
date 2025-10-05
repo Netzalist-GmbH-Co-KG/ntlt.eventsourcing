@@ -1,4 +1,3 @@
-using MartenAkkaTests.Api.EventSourcing;
 using MartenAkkaTests.Api.SessionManagement;
 using MartenAkkaTests.Api.SessionManagement.Cmd;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace MartenAkkaTests.Api.Controller.auth;
 
 /// <summary>
-/// OAuth2-compatible authentication controller
+///     OAuth2-compatible authentication controller
 /// </summary>
 [ApiController]
 public class AuthController : ControllerBase
@@ -19,7 +18,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// OAuth2 token endpoint - creates a new session and returns SessionId as access_token
+    ///     OAuth2 token endpoint - creates a new session and returns SessionId as access_token
     /// </summary>
     [HttpPost("api/auth/token")]
     public async Task<IActionResult> GetToken()

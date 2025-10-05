@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace MartenAkkaTests.Api.Controller.v1;
 
 /// <summary>
-/// Base controller for v1 Query endpoints (CQRS Read side)
-/// Route pattern: /api/v1/qry/{controller}/{action}
+///     Base controller for v1 Query endpoints (CQRS Read side)
+///     Route pattern: /api/v1/qry/{controller}/{action}
 /// </summary>
 [ApiController]
 [Area("v1")]

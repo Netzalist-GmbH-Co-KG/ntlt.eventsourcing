@@ -22,7 +22,8 @@ public class UserController : V1QueryControllerBase
             .ToListAsync();
 
         var display = users
-            .Select(u => new { u.UserId, u.UserName, u.Email, u.IsDeactivated, HasPassword = !string.IsNullOrEmpty(u.Password) });
+            .Select(u => new
+                { u.UserId, u.UserName, u.Email, u.IsDeactivated, HasPassword = !string.IsNullOrEmpty(u.Password) });
 
         return Ok(display);
     }

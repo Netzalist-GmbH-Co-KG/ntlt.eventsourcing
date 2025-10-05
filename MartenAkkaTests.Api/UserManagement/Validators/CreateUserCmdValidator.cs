@@ -4,8 +4,8 @@ using MartenAkkaTests.Api.UserManagement.Cmd;
 namespace MartenAkkaTests.Api.UserManagement.Validators;
 
 /// <summary>
-/// Validator for CreateUserCmd.
-/// Demonstrates input validation pattern for commands.
+///     Validator for CreateUserCmd.
+///     Demonstrates input validation pattern for commands.
 /// </summary>
 public class CreateUserCmdValidator : AbstractValidator<CreateUserCmd>
 {
@@ -15,7 +15,8 @@ public class CreateUserCmdValidator : AbstractValidator<CreateUserCmd>
             .NotEmpty().WithMessage("Username is required")
             .MinimumLength(3).WithMessage("Username must be at least 3 characters")
             .MaximumLength(50).WithMessage("Username cannot exceed 50 characters")
-            .Matches("^[a-zA-Z0-9_-]+$").WithMessage("Username can only contain letters, numbers, underscores, and hyphens");
+            .Matches("^[a-zA-Z0-9_-]+$")
+            .WithMessage("Username can only contain letters, numbers, underscores, and hyphens");
 
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required")

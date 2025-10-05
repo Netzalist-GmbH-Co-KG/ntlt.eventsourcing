@@ -1,13 +1,12 @@
 using Marten;
 using MartenAkkaTests.Api.EventSourcing;
-using MartenAkkaTests.Api.SessionManagement;
 using MartenAkkaTests.Api.UserManagement.Cmd;
 
 namespace MartenAkkaTests.Api.UserManagement;
 
 /// <summary>
-/// Command service for user management operations.
-/// Replaces UserManagementCmdRouter and user command handler actors.
+///     Command service for user management operations.
+///     Replaces UserManagementCmdRouter and user command handler actors.
 /// </summary>
 public class UserCommandService : CommandServiceBase
 {
@@ -25,11 +24,9 @@ public class UserCommandService : CommandServiceBase
                 .FirstOrDefaultAsync();
 
             if (existingUser != null)
-            {
                 return existingUser.UserName == cmd.UserName
                     ? new CommandResult(cmd, false, null, "Username already exists")
                     : new CommandResult(cmd, false, null, "Email already exists");
-            }
 
             var userId = GuidProvider.NewGuid();
             session.Events.StartStream<User>(userId,
@@ -54,7 +51,7 @@ public class UserCommandService : CommandServiceBase
                 return new CommandResult(cmd, false, null, "User already has a password authentication");
 
             // Use BCrypt for secure password hashing with work factor 12
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(cmd.Password, workFactor: 12);
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(cmd.Password, 12);
 
             session.Events.Append(cmd.UserId,
                 new PasswordAuthenticationAddedEvent(sessionObj.SessionId, cmd.UserId, passwordHash));
@@ -71,16 +68,11 @@ public class UserCommandService : CommandServiceBase
                 .Where(u => u.UserId == cmd.UserId)
                 .FirstOrDefaultAsync();
 
-            if (existingUser == null)
-            {
-                return new CommandResult(cmd, false, null, "User not found");
-            }
+            if (existingUser == null) return new CommandResult(cmd, false, null, "User not found");
 
             if (existingUser.IsDeactivated)
-            {
                 // Idempotent - already deactivated
                 return new CommandResult(cmd, true);
-            }
 
             session.Events.Append(cmd.UserId,
                 new UserDeactivatedEvent(sessionObj.SessionId, cmd.UserId));

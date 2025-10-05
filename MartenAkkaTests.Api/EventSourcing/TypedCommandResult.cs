@@ -1,37 +1,39 @@
 namespace MartenAkkaTests.Api.EventSourcing;
 
 /// <summary>
-/// Type-safe discriminated union for command execution results.
-/// Provides type-safe result handling with pattern matching.
-/// This will replace CommandResult in the future.
+///     Type-safe discriminated union for command execution results.
+///     Provides type-safe result handling with pattern matching.
+///     This will replace CommandResult in the future.
 /// </summary>
 public abstract record TypedCommandResult
 {
-    /// <summary>
-    /// Command executed successfully without return data
-    /// </summary>
-    public sealed record Success() : TypedCommandResult;
+    private TypedCommandResult()
+    {
+    }
 
     /// <summary>
-    /// Command executed successfully with typed return data
+    ///     Command executed successfully without return data
+    /// </summary>
+    public sealed record Success : TypedCommandResult;
+
+    /// <summary>
+    ///     Command executed successfully with typed return data
     /// </summary>
     public sealed record Success<T>(T Data) : TypedCommandResult;
 
     /// <summary>
-    /// Command execution failed with error details
+    ///     Command execution failed with error details
     /// </summary>
     public sealed record Failure(string ErrorCode, string Message) : TypedCommandResult;
-
-    private TypedCommandResult() { }
 }
 
 /// <summary>
-/// Extension methods for working with TypedCommandResult
+///     Extension methods for working with TypedCommandResult
 /// </summary>
 public static class TypedCommandResultExtensions
 {
     /// <summary>
-    /// Pattern match on TypedCommandResult
+    ///     Pattern match on TypedCommandResult
     /// </summary>
     public static TResult Match<TResult>(
         this TypedCommandResult result,
@@ -47,7 +49,7 @@ public static class TypedCommandResultExtensions
     }
 
     /// <summary>
-    /// Pattern match on TypedCommandResult with typed success data
+    ///     Pattern match on TypedCommandResult with typed success data
     /// </summary>
     public static TResult Match<TData, TResult>(
         this TypedCommandResult result,
@@ -63,19 +65,23 @@ public static class TypedCommandResultExtensions
     }
 
     /// <summary>
-    /// Check if result is successful
+    ///     Check if result is successful
     /// </summary>
-    public static bool IsSuccess(this TypedCommandResult result) =>
-        result is TypedCommandResult.Success or TypedCommandResult.Success<object>;
+    public static bool IsSuccess(this TypedCommandResult result)
+    {
+        return result is TypedCommandResult.Success or TypedCommandResult.Success<object>;
+    }
 
     /// <summary>
-    /// Check if result is failure
+    ///     Check if result is failure
     /// </summary>
-    public static bool IsFailure(this TypedCommandResult result) =>
-        result is TypedCommandResult.Failure;
+    public static bool IsFailure(this TypedCommandResult result)
+    {
+        return result is TypedCommandResult.Failure;
+    }
 
     /// <summary>
-    /// Get data from Success result or throw
+    ///     Get data from Success result or throw
     /// </summary>
     public static T GetData<T>(this TypedCommandResult result)
     {
@@ -89,24 +95,22 @@ public static class TypedCommandResultExtensions
     }
 
     /// <summary>
-    /// Convert legacy CommandResult to new TypedCommandResult
+    ///     Convert legacy CommandResult to new TypedCommandResult
     /// </summary>
     public static TypedCommandResult ToTyped(this CommandResult legacy)
     {
         if (legacy.Success)
-        {
             return legacy.ResultData != null
                 ? new TypedCommandResult.Success<object>(legacy.ResultData)
                 : new TypedCommandResult.Success();
-        }
 
         return new TypedCommandResult.Failure(
-            ErrorCode: "COMMAND_FAILED",
-            Message: legacy.ErrorMessage ?? "Command execution failed");
+            "COMMAND_FAILED",
+            legacy.ErrorMessage ?? "Command execution failed");
     }
 
     /// <summary>
-    /// Convert TypedCommandResult to legacy CommandResult (for backward compat)
+    ///     Convert TypedCommandResult to legacy CommandResult (for backward compat)
     /// </summary>
     public static CommandResult ToLegacy(this TypedCommandResult result, ICmd cmd)
     {

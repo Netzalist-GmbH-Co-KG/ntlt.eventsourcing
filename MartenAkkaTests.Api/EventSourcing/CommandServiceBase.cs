@@ -3,22 +3,16 @@ using Marten.Exceptions;
 using MartenAkkaTests.Api.Common;
 using MartenAkkaTests.Api.Infrastructure.Extensions;
 using MartenAkkaTests.Api.SessionManagement;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace MartenAkkaTests.Api.EventSourcing;
 
 /// <summary>
-/// Base class for command services.
-/// Replaces actor-based command handlers with simple async services.
+///     Base class for command services.
+///     Replaces actor-based command handlers with simple async services.
 /// </summary>
 public abstract class CommandServiceBase
 {
-    protected IServiceProvider ServiceProvider { get; }
-    protected IDateTimeProvider DateTimeProvider { get; }
-    protected IGuidProvider GuidProvider { get; }
-    protected ILogger Logger { get; }
-
     protected CommandServiceBase(IServiceProvider serviceProvider, ILogger logger)
     {
         ServiceProvider = serviceProvider;
@@ -27,9 +21,14 @@ public abstract class CommandServiceBase
         Logger = logger;
     }
 
+    protected IServiceProvider ServiceProvider { get; }
+    protected IDateTimeProvider DateTimeProvider { get; }
+    protected IGuidProvider GuidProvider { get; }
+    protected ILogger Logger { get; }
+
     /// <summary>
-    /// Execute command without session validation.
-    /// Use for commands that don't require authentication (e.g., CreateSession).
+    ///     Execute command without session validation.
+    ///     Use for commands that don't require authentication (e.g., CreateSession).
     /// </summary>
     protected async Task<CommandResult> ExecuteCommand<TCmd>(
         TCmd cmd,
@@ -67,9 +66,9 @@ public abstract class CommandServiceBase
     }
 
     /// <summary>
-    /// Execute command with session validation and exception handling.
-    /// Session is retrieved from HttpContext (set by SessionValidationMiddleware).
-    /// Falls back to DB query if HttpContext is not available (e.g., in tests).
+    ///     Execute command with session validation and exception handling.
+    ///     Session is retrieved from HttpContext (set by SessionValidationMiddleware).
+    ///     Falls back to DB query if HttpContext is not available (e.g., in tests).
     /// </summary>
     protected async Task<CommandResult> ExecuteCommandInSession<TCmd>(
         TCmd cmd,
@@ -117,13 +116,15 @@ public abstract class CommandServiceBase
 
                 if (session == null)
                 {
-                    Logger.LogWarning("Invalid SessionId {SessionId} for command {CommandName}", cmd.SessionId, commandName);
+                    Logger.LogWarning("Invalid SessionId {SessionId} for command {CommandName}", cmd.SessionId,
+                        commandName);
                     return new CommandResult(cmd, false, null, "Invalid SessionId");
                 }
 
                 if (session.Closed)
                 {
-                    Logger.LogWarning("Session {SessionId} is closed for command {CommandName}", cmd.SessionId, commandName);
+                    Logger.LogWarning("Session {SessionId} is closed for command {CommandName}", cmd.SessionId,
+                        commandName);
                     return new CommandResult(cmd, false, null, "Session is closed");
                 }
             }
@@ -137,7 +138,8 @@ public abstract class CommandServiceBase
             }
             else
             {
-                Logger.LogInformation("Command {CommandName} executed successfully in session {SessionId}", commandName, cmd.SessionId);
+                Logger.LogInformation("Command {CommandName} executed successfully in session {SessionId}", commandName,
+                    cmd.SessionId);
             }
 
             await documentSession.SaveChangesAsync();
@@ -146,7 +148,8 @@ public abstract class CommandServiceBase
         }
         catch (MartenCommandException ex) when (ex.InnerException is PostgresException { SqlState: "23505" })
         {
-            Logger.LogWarning(ex, "Race condition detected in command {CommandName}: Unique constraint violated", commandName);
+            Logger.LogWarning(ex, "Race condition detected in command {CommandName}: Unique constraint violated",
+                commandName);
             return new CommandResult(cmd, false, null, "Race condition: Unique constraint violated");
         }
         catch (Exception e)

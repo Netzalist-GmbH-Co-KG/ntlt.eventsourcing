@@ -1,12 +1,11 @@
-using Marten;
 using MartenAkkaTests.Api.SessionManagement;
 using MartenAkkaTests.Api.UserManagement;
 
 namespace MartenAkkaTests.Api.EventSourcing;
 
 /// <summary>
-/// Service for rebuilding projections.
-/// Replaces RebuildProjectionActor.
+///     Service for rebuilding projections.
+///     Replaces RebuildProjectionActor.
 /// </summary>
 public class RebuildProjectionService : CommandServiceBase
 {

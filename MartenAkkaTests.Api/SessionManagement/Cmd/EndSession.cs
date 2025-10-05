@@ -1,5 +1,4 @@
-﻿using Marten;
-using MartenAkkaTests.Api.EventSourcing;
+﻿using MartenAkkaTests.Api.EventSourcing;
 
 namespace MartenAkkaTests.Api.SessionManagement.Cmd;
 
@@ -8,4 +7,3 @@ public record EndSessionCmd(Guid? SessionId, string Reason) : ICmd;
 
 // Event
 public record SessionEndedEvent(Guid SessionId, string Reason, DateTime EndedAt);
-

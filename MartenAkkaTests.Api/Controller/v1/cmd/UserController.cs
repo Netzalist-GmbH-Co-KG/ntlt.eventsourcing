@@ -1,4 +1,3 @@
-using MartenAkkaTests.Api.EventSourcing;
 using MartenAkkaTests.Api.UserManagement;
 using MartenAkkaTests.Api.UserManagement.Cmd;
 using Microsoft.AspNetCore.Mvc;
@@ -20,10 +19,7 @@ public class UserController : V1CommandControllerBase
         // SessionId is automatically injected by CmdModelBinder
         var result = await _userService.CreateUser(cmd);
 
-        if (result.Success && result.ResultData != null)
-        {
-            return Ok(new { UserId = (Guid)result.ResultData });
-        }
+        if (result.Success && result.ResultData != null) return Ok(new { UserId = (Guid)result.ResultData });
 
         return StatusCode(500, new { result.ErrorMessage });
     }
@@ -34,10 +30,7 @@ public class UserController : V1CommandControllerBase
         // SessionId is automatically injected by CmdModelBinder
         var result = await _userService.AddPasswordAuthentication(cmd);
 
-        if (result.Success)
-        {
-            return Ok();
-        }
+        if (result.Success) return Ok();
 
         return StatusCode(500, new { result.ErrorMessage });
     }
@@ -48,10 +41,7 @@ public class UserController : V1CommandControllerBase
         // SessionId is automatically injected by CmdModelBinder
         var result = await _userService.DeactivateUser(cmd);
 
-        if (result.Success)
-        {
-            return Ok();
-        }
+        if (result.Success) return Ok();
 
         return StatusCode(500, new { result.ErrorMessage });
     }

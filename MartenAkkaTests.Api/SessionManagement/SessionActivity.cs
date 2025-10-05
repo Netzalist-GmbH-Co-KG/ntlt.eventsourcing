@@ -1,13 +1,13 @@
 namespace MartenAkkaTests.Api.SessionManagement;
 
 /// <summary>
-/// Session activity tracking - CRUD table (not event sourced).
-/// Tracks last access time for sessions without polluting event stream.
+///     Session activity tracking - CRUD table (not event sourced).
+///     Tracks last access time for sessions without polluting event stream.
 /// </summary>
 public record SessionActivity(Guid SessionId, DateTime LastAccessedAt)
 {
     /// <summary>
-    /// Marten identity property
+    ///     Marten identity property
     /// </summary>
     public Guid Id => SessionId;
 }

@@ -1,6 +1,7 @@
 ﻿using Akka.Actor;
+using MartenAkkaTests.Api.EventSourcing;
 using MartenAkkaTests.Api.SessionManagement;
-using MartenAkkaTests.Api.SessionManagement.CreateSession;
+using MartenAkkaTests.Api.SessionManagement.Cmd;
 using MartenAkkaTests.Api.Tests.Infrastructure;
 
 namespace MartenAkkaTests.Api.Tests.SessionManagement.CreateSession;
@@ -22,13 +23,13 @@ public class Tests : ActorTestBase
 
         // Act
         _sut.Tell(cmd);
-        var result = await ExpectMsgAsync<CreateSessionResult>(TimeSpan.FromSeconds(3));
+        var result = await ExpectMsgAsync<CommandResult>(TimeSpan.FromSeconds(3));
 
         Assert.Multiple(() =>
         {
             // Assert
             Assert.That(result.Success, Is.True);
-            Assert.That(result.SessionId, Is.EqualTo(FakeGuidProvider.Guid1));
+            Assert.That(result.ResultData, Is.EqualTo(FakeGuidProvider.Guid1));
         });
 
         // Verify event was persisted (optional - Projection-Check)

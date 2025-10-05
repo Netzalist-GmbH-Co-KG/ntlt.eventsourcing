@@ -3,19 +3,19 @@ using Akka.Hosting;
 using MartenAkkaTests.Api.EventSourcing;
 using Microsoft.AspNetCore.Mvc;
 
-namespace MartenAkkaTests.Api.Controller;
+namespace MartenAkkaTests.Api.Controller.cmd;
 
-public class RebuildProjectionsController : ControllerBase
+public class RebuildProjectionsCmdController : ControllerBase
 {
     private readonly IActorRef _rebuildActor;
 
-    public RebuildProjectionsController(
+    public RebuildProjectionsCmdController(
         IRequiredActor<RebuildProjectionActor> rebuildActor)
     {
         _rebuildActor = rebuildActor.ActorRef;
     }
 
-    [HttpPost("/rebuild")]
+    [HttpPost("api/cmd/rebuild/run")]
     public async Task<IActionResult> RebuildProjections([FromQuery] Guid sessionId, [FromQuery] string? projection = null)
     {
         try

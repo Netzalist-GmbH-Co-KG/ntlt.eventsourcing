@@ -4,12 +4,9 @@ using Marten;
 using MartenAkkaTests.Api.Common;
 using MartenAkkaTests.Api.EventSourcing;
 using MartenAkkaTests.Api.SessionManagement;
-using MartenAkkaTests.Api.SessionManagement.CreateSession;
-using MartenAkkaTests.Api.SessionManagement.EndSession;
+using MartenAkkaTests.Api.SessionManagement.Cmd;
 using MartenAkkaTests.Api.UserManagement;
-using MartenAkkaTests.Api.UserManagement.AddAuthentication;
-using MartenAkkaTests.Api.UserManagement.CreateUser;
-using MartenAkkaTests.Api.UserManagement.DeactivateUser;
+using MartenAkkaTests.Api.UserManagement.Cmd;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,21 +44,11 @@ builder.Services.AddAkka("akka-universe", (akkaConfigurationBuilder, sp) =>
         var rebuildActor = system.ActorOf(RebuildProjectionActor.Prop(sp), "rebuildProjectionActor");
         registry.Register<RebuildProjectionActor>(rebuildActor);
         
-        var createUserCmdHandler = system.ActorOf(CreateUserCmdHandler.Prop(sp), "CreateUserCmdHandler");
-        registry.Register<CreateUserCmdHandler>(createUserCmdHandler);
+        var userManagementCmdRouter = system.ActorOf(UserManagementCmdRouter.Prop(sp), "UserManagementCmdRouter");
+        registry.Register<UserManagementCmdRouter>(userManagementCmdRouter);
 
-        var addPasswordAuthenticationCmdHandler = system.ActorOf(AddPasswordAuthenticationCmdHandler.Prop(sp), "AddPasswordAuthenticationCmdHandler");
-        registry.Register<AddPasswordAuthenticationCmdHandler>(addPasswordAuthenticationCmdHandler);
-
-        var deactivateUserCmdHandler = system.ActorOf(DeactivateUserCmdHandler.Prop(sp), "DeactivateUserCmdHandler");
-        registry.Register<DeactivateUserCmdHandler>(deactivateUserCmdHandler);
-        
-        var createSessionCmdHandler = system.ActorOf(CreateSessionCmdHandler.Prop(sp), "CreateSessionCmdHandler");
-        registry.Register<CreateSessionCmdHandler>(createSessionCmdHandler);
-        
-        var endSessionCmdHandler = system.ActorOf(EndSessionCmdHandler.Prop(sp), "EndSessionCmdHandler");
-        registry.Register<EndSessionCmdHandler>(endSessionCmdHandler);
-
+        var sessionManagementCmdRouter = system.ActorOf(SessionManagementCmdRouter.Prop(sp), "SessionManagementCmdRouter");
+        registry.Register<SessionManagementCmdRouter>(sessionManagementCmdRouter);
     });
 });
 

@@ -84,7 +84,12 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // Register custom model binder for ICmd types
+    // This automatically injects SessionId from HttpContext, eliminating Request DTOs
+    options.ModelBinderProviders.Insert(0, new MartenAkkaTests.Api.Infrastructure.ModelBinders.CmdModelBinderProvider());
+});
 builder.Services.AddTransient<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddTransient<IGuidProvider, GuidProvider>();
 

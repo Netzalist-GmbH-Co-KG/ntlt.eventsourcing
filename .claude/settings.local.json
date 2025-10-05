@@ -3,7 +3,13 @@
     "allow": [
       "Bash(docker exec:*)",
       "Bash(dotnet build)",
-      "Bash(powershell.exe:*)"
+      "Bash(powershell.exe:*)",
+      "Bash(dotnet build:*)",
+      "mcp__playwright__browser_navigate",
+      "Read(//mnt/wsl/**)",
+      "Bash(awk:*)",
+      "Bash(dotnet run:*)",
+      "Bash(ip route:*)"
     ],
     "deny": [],
     "ask": []

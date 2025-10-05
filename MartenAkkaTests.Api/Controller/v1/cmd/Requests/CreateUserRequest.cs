@@ -1,3 +1,3 @@
-namespace MartenAkkaTests.Api.Controller.cmd.Requests;
+namespace MartenAkkaTests.Api.Controller.v1.cmd.Requests;
 
 public record CreateUserRequest(string UserName, string Email);

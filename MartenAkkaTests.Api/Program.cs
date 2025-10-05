@@ -8,7 +8,9 @@ using MartenAkkaTests.Api.SessionManagement;
 using MartenAkkaTests.Api.SessionManagement.Cmd;
 using MartenAkkaTests.Api.UserManagement;
 using MartenAkkaTests.Api.UserManagement.Cmd;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,41 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    // Group by CQRS + Version
+    options.SwaggerDoc("v1-commands", new OpenApiInfo
+    {
+        Title = "Marten Akka API - Commands (v1)",
+        Version = "v1",
+        Description = "CQRS Write Side - Command endpoints for modifying state"
+    });
+
+    options.SwaggerDoc("v1-queries", new OpenApiInfo
+    {
+        Title = "Marten Akka API - Queries (v1)",
+        Version = "v1",
+        Description = "CQRS Read Side - Query endpoints for retrieving data"
+    });
+
+    options.SwaggerDoc("infrastructure", new OpenApiInfo
+    {
+        Title = "Marten Akka API - Infrastructure",
+        Version = "v1",
+        Description = "Authentication and system management endpoints"
+    });
+
+    // Group endpoints by ApiExplorerSettings GroupName
+    options.DocInclusionPredicate((docName, apiDesc) =>
+    {
+        if (!apiDesc.TryGetMethodInfo(out var methodInfo)) return false;
+
+        var groupName = apiDesc.ActionDescriptor
+            .EndpointMetadata
+            .OfType<ApiExplorerSettingsAttribute>()
+            .FirstOrDefault()?.GroupName;
+
+        return docName == (groupName ?? "infrastructure");
+    });
+
     // OAuth2 Password Flow for Swagger UI
     options.AddSecurityDefinition("OAuth2", new OpenApiSecurityScheme
     {
@@ -99,6 +136,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
+        options.SwaggerEndpoint("/swagger/v1-commands/swagger.json", "Commands (v1)");
+        options.SwaggerEndpoint("/swagger/v1-queries/swagger.json", "Queries (v1)");
+        options.SwaggerEndpoint("/swagger/infrastructure/swagger.json", "Infrastructure");
+
         options.OAuthClientId("swagger-ui");
         options.OAuthAppName("Marten Akka API");
     });

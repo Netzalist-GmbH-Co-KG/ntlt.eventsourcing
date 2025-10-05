@@ -12,7 +12,7 @@ public class SessionValidationMiddleware
     private static readonly HashSet<string> UnauthenticatedPaths = new()
     {
         "/swagger",
-        "/api/cmd/session/create",
+        "/api/v1/cmd/session/create",
         "/api/auth/token"
     };
 

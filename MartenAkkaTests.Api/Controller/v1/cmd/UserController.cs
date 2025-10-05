@@ -1,25 +1,25 @@
-﻿using Akka.Actor;
+using Akka.Actor;
 using Akka.Hosting;
-using MartenAkkaTests.Api.Controller.cmd.Requests;
+using MartenAkkaTests.Api.Controller.v1.cmd.Requests;
 using MartenAkkaTests.Api.EventSourcing;
 using MartenAkkaTests.Api.Infrastructure.Extensions;
 using MartenAkkaTests.Api.UserManagement;
 using MartenAkkaTests.Api.UserManagement.Cmd;
 using Microsoft.AspNetCore.Mvc;
 
-namespace MartenAkkaTests.Api.Controller.cmd;
+namespace MartenAkkaTests.Api.Controller.v1.cmd;
 
-public class UserManagementCmdController : ControllerBase
+public class UserController : V1CommandControllerBase
 {
     private readonly IActorRef _userManagementCmdRouter;
 
-    public UserManagementCmdController(IRequiredActor<UserManagementCmdRouter> userManagementCmdRouter)
+    public UserController(IRequiredActor<UserManagementCmdRouter> userManagementCmdRouter)
     {
         _userManagementCmdRouter = userManagementCmdRouter.ActorRef;
     }
 
-    [HttpPost("api/cmd/user/create")]
-    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
+    [HttpPost("create")]
+    public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
     {
         var sessionId = HttpContext.GetSessionId();
         var result = await _userManagementCmdRouter.Ask<CommandResult>(
@@ -33,7 +33,7 @@ public class UserManagementCmdController : ControllerBase
         return StatusCode(500, new { result.ErrorMessage });
     }
 
-    [HttpPost("api/cmd/user/add-password-authentication")]
+    [HttpPost("add-password-authentication")]
     public async Task<IActionResult> AddPasswordAuthentication([FromBody] AddPasswordAuthenticationRequest request)
     {
         var sessionId = HttpContext.GetSessionId();
@@ -48,8 +48,8 @@ public class UserManagementCmdController : ControllerBase
         return StatusCode(500, new { result.ErrorMessage });
     }
 
-    [HttpPost("api/cmd/user/deactivate-user")]
-    public async Task<IActionResult> DeactivateUser([FromBody] DeactivateUserRequest request)
+    [HttpPost("deactivate")]
+    public async Task<IActionResult> Deactivate([FromBody] DeactivateUserRequest request)
     {
         var sessionId = HttpContext.GetSessionId();
         var result = await _userManagementCmdRouter.Ask<CommandResult>(

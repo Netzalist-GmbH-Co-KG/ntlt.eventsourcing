@@ -24,7 +24,7 @@ public class AuthController : ControllerBase
     [HttpPost("api/auth/token")]
     public async Task<IActionResult> GetToken()
     {
-        var result = await _sessionService.CreateSession(new CreateSessionCmd());
+        var result = await _sessionService.Handle(new CreateSessionCmd());
 
         if (result.Success && result.ResultData != null)
         {

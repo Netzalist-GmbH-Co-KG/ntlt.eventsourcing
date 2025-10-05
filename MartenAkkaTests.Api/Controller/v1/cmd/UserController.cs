@@ -18,7 +18,7 @@ public class UserController : V1CommandControllerBase
     public async Task<IActionResult> Create([FromBody] CreateUserCmd cmd)
     {
         // SessionId is automatically injected by CmdModelBinder
-        var result = await _userService.CreateUser(cmd);
+        var result = await _userService.Handle(cmd);
 
         if (result.Success && result.ResultData != null)
         {
@@ -32,7 +32,7 @@ public class UserController : V1CommandControllerBase
     public async Task<IActionResult> AddPasswordAuthentication([FromBody] AddPasswordAuthenticationCmd cmd)
     {
         // SessionId is automatically injected by CmdModelBinder
-        var result = await _userService.AddPasswordAuthentication(cmd);
+        var result = await _userService.Handle(cmd);
 
         if (result.Success)
         {
@@ -46,7 +46,7 @@ public class UserController : V1CommandControllerBase
     public async Task<IActionResult> Deactivate([FromBody] DeactivateUserCmd cmd)
     {
         // SessionId is automatically injected by CmdModelBinder
-        var result = await _userService.DeactivateUser(cmd);
+        var result = await _userService.Handle(cmd);
 
         if (result.Success)
         {

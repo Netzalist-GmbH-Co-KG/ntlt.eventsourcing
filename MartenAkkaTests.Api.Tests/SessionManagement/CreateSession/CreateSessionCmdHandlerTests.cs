@@ -22,7 +22,7 @@ public class Tests : ServiceTestBase
         var cmd = new CreateSessionCmd();
 
         // Act
-        var result = await _sut.CreateSession(cmd);
+        var result = await _sut.Handle(cmd);
 
         Assert.Multiple(() =>
         {

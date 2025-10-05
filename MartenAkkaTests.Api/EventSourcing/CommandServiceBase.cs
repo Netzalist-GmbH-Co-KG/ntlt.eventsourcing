@@ -1,3 +1,4 @@
+using FluentValidation;
 using Marten;
 using Marten.Exceptions;
 using MartenAkkaTests.Api.Common;
@@ -42,6 +43,20 @@ public abstract class CommandServiceBase
             Logger.LogInformation("Executing command {CommandName}", commandName);
 
             using var scope = ServiceProvider.CreateScope();
+
+            // Validate command
+            var validator = scope.ServiceProvider.GetService<IValidator<TCmd>>();
+            if (validator != null)
+            {
+                var validationResult = await validator.ValidateAsync(cmd);
+                if (!validationResult.IsValid)
+                {
+                    var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+                    Logger.LogWarning("Command {CommandName} validation failed: {Errors}", commandName, errors);
+                    return new CommandResult(cmd, false, null, errors);
+                }
+            }
+
             var documentSession = scope.ServiceProvider.GetRequiredService<IDocumentSession>();
 
             var result = await handler(cmd, documentSession);
@@ -82,6 +97,20 @@ public abstract class CommandServiceBase
             Logger.LogInformation("Executing command {CommandName} in session {SessionId}", commandName, cmd.SessionId);
 
             using var scope = ServiceProvider.CreateScope();
+
+            // Validate command
+            var validator = scope.ServiceProvider.GetService<IValidator<TCmd>>();
+            if (validator != null)
+            {
+                var validationResult = await validator.ValidateAsync(cmd);
+                if (!validationResult.IsValid)
+                {
+                    var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+                    Logger.LogWarning("Command {CommandName} validation failed: {Errors}", commandName, errors);
+                    return new CommandResult(cmd, false, null, errors);
+                }
+            }
+
             var documentSession = scope.ServiceProvider.GetRequiredService<IDocumentSession>();
 
             if (cmd.SessionId == null)

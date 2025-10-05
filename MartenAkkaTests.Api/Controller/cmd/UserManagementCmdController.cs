@@ -1,7 +1,8 @@
-﻿using System.Net;
-using Akka.Actor;
+﻿using Akka.Actor;
 using Akka.Hosting;
+using MartenAkkaTests.Api.Controller.cmd.Requests;
 using MartenAkkaTests.Api.EventSourcing;
+using MartenAkkaTests.Api.Infrastructure.Extensions;
 using MartenAkkaTests.Api.UserManagement;
 using MartenAkkaTests.Api.UserManagement.Cmd;
 using Microsoft.AspNetCore.Mvc;
@@ -10,61 +11,55 @@ namespace MartenAkkaTests.Api.Controller.cmd;
 
 public class UserManagementCmdController : ControllerBase
 {
-    private readonly IActorRef  _userManagementCmdRouter;
+    private readonly IActorRef _userManagementCmdRouter;
 
-    public UserManagementCmdController(
-        IRequiredActor<UserManagementCmdRouter> userManagementCmdRouter
-        )
+    public UserManagementCmdController(IRequiredActor<UserManagementCmdRouter> userManagementCmdRouter)
     {
         _userManagementCmdRouter = userManagementCmdRouter.ActorRef;
     }
 
     [HttpPost("api/cmd/user/create")]
-    public async Task<IActionResult> CreateUser([FromQuery] Guid sessionId, [FromQuery] string userName, [FromQuery] string email)
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
-        var result = await _userManagementCmdRouter.Ask<CommandResult>(new CreateUserCmd(sessionId, userName, email));
+        var sessionId = HttpContext.GetSessionId();
+        var result = await _userManagementCmdRouter.Ask<CommandResult>(
+            new CreateUserCmd(sessionId, request.UserName, request.Email));
+
         if (result.Success && result.ResultData != null)
         {
-            return new OkObjectResult(new { UserId = (Guid) result.ResultData });
+            return Ok(new { UserId = (Guid)result.ResultData });
         }
 
-        var response = new JsonResult(new { result.ErrorMessage })
-        {
-            StatusCode = (int)HttpStatusCode.InternalServerError
-        };
-        return response;
+        return StatusCode(500, new { result.ErrorMessage });
     }
-    
-    
+
     [HttpPost("api/cmd/user/add-password-authentication")]
-    public async Task<IActionResult> AddPasswordAuthentication([FromQuery] Guid sessionId, [FromQuery] Guid userId, [FromQuery] string password)
+    public async Task<IActionResult> AddPasswordAuthentication([FromBody] AddPasswordAuthenticationRequest request)
     {
-        var result = await _userManagementCmdRouter.Ask<CommandResult>(new AddPasswordAuthenticationCmd(sessionId, userId, password));
+        var sessionId = HttpContext.GetSessionId();
+        var result = await _userManagementCmdRouter.Ask<CommandResult>(
+            new AddPasswordAuthenticationCmd(sessionId, request.UserId, request.Password));
+
         if (result.Success)
         {
-            return new OkResult();
+            return Ok();
         }
 
-        var response = new JsonResult(new { result.ErrorMessage })
-        {
-            StatusCode = (int)HttpStatusCode.InternalServerError
-        };
-        return response;
+        return StatusCode(500, new { result.ErrorMessage });
     }
-    
+
     [HttpPost("api/cmd/user/deactivate-user")]
-    public async Task<IActionResult> DeactivateUser([FromQuery] Guid sessionId, [FromQuery] Guid userId)
+    public async Task<IActionResult> DeactivateUser([FromBody] DeactivateUserRequest request)
     {
-        var result = await _userManagementCmdRouter.Ask<CommandResult>( new DeactivateUserCmd(sessionId, userId));
+        var sessionId = HttpContext.GetSessionId();
+        var result = await _userManagementCmdRouter.Ask<CommandResult>(
+            new DeactivateUserCmd(sessionId, request.UserId));
+
         if (result.Success)
         {
-            return new OkResult();
+            return Ok();
         }
 
-        var response = new JsonResult(new { result.ErrorMessage })
-        {
-            StatusCode = (int)HttpStatusCode.InternalServerError
-        };
-        return response;
+        return StatusCode(500, new { result.ErrorMessage });
     }
 }

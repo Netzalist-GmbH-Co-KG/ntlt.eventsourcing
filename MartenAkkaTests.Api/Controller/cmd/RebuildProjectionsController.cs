@@ -1,6 +1,7 @@
 ﻿using Akka.Actor;
 using Akka.Hosting;
 using MartenAkkaTests.Api.EventSourcing;
+using MartenAkkaTests.Api.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MartenAkkaTests.Api.Controller.cmd;
@@ -16,10 +17,11 @@ public class RebuildProjectionsCmdController : ControllerBase
     }
 
     [HttpPost("api/cmd/rebuild/run")]
-    public async Task<IActionResult> RebuildProjections([FromQuery] Guid sessionId, [FromQuery] string? projection = null)
+    public async Task<IActionResult> RebuildProjections([FromQuery] string? projection = null)
     {
         try
         {
+            var sessionId = HttpContext.GetSessionId();
             var result = await _rebuildActor.Ask<object>(
                 new RebuildProjectionActor.RebuildProjectionCommand(sessionId, projection),
                 TimeSpan.FromMinutes(5));

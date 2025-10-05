@@ -3,18 +3,49 @@ using JasperFx.Events.Projections;
 using Marten;
 using MartenAkkaTests.Api.Common;
 using MartenAkkaTests.Api.EventSourcing;
+using MartenAkkaTests.Api.Infrastructure.Middleware;
 using MartenAkkaTests.Api.SessionManagement;
 using MartenAkkaTests.Api.SessionManagement.Cmd;
 using MartenAkkaTests.Api.UserManagement;
 using MartenAkkaTests.Api.UserManagement.Cmd;
-using Scalar.AspNetCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // OAuth2 Password Flow for Swagger UI
+    options.AddSecurityDefinition("OAuth2", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.OAuth2,
+        Flows = new OpenApiOAuthFlows
+        {
+            Password = new OpenApiOAuthFlow
+            {
+                TokenUrl = new Uri("/api/auth/token", UriKind.Relative),
+                Scopes = new Dictionary<string, string>()
+            }
+        },
+        Description = "Click 'Authorize' to create a new session. Leave username/password empty."
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "OAuth2"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 builder.Services.AddControllers();
 builder.Services.AddTransient<IDateTimeProvider, DateTimeProvider>();
@@ -56,11 +87,21 @@ builder.Services.AddAkka("akka-universe", (akkaConfigurationBuilder, sp) =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment()) app.MapOpenApi();
+app.UseHttpsRedirection();
+
+// IMPORTANT: Middleware must be registered BEFORE MapControllers
+app.UseMiddleware<SessionValidationMiddleware>();
+
 app.MapControllers();
 
-app.UseHttpsRedirection();
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.OAuthClientId("swagger-ui");
+        options.OAuthAppName("Marten Akka API");
+    });
+}
 
 app.Run();

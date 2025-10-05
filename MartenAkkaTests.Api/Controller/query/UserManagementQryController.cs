@@ -17,15 +17,9 @@ public class UserManagementQryController : ControllerBase
     }
 
     [HttpGet("api/query/user/list")]
-    public async Task<IActionResult> GetAllUsers([FromQuery] Guid sessionId)
+    public async Task<IActionResult> GetAllUsers()
     {
         await using var session = _documentStore.LightweightSession();
-        var sessionExists = session.Query<Session>()
-            .Any(u => u.SessionId == sessionId && u.Closed == false);
-        if (!sessionExists)
-        {
-            return new UnauthorizedResult();
-        }
 
         var users = await session.Query<User>()
             .ToListAsync();

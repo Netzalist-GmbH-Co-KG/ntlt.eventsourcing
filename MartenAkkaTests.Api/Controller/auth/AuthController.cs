@@ -1,5 +1,3 @@
-using Akka.Actor;
-using Akka.Hosting;
 using MartenAkkaTests.Api.EventSourcing;
 using MartenAkkaTests.Api.SessionManagement;
 using MartenAkkaTests.Api.SessionManagement.Cmd;
@@ -13,11 +11,11 @@ namespace MartenAkkaTests.Api.Controller.auth;
 [ApiController]
 public class AuthController : ControllerBase
 {
-    private readonly IActorRef _sessionManagementCmdRouter;
+    private readonly SessionCommandService _sessionService;
 
-    public AuthController(IRequiredActor<SessionManagementCmdRouter> sessionManagementCmdRouter)
+    public AuthController(SessionCommandService sessionService)
     {
-        _sessionManagementCmdRouter = sessionManagementCmdRouter.ActorRef;
+        _sessionService = sessionService;
     }
 
     /// <summary>
@@ -26,7 +24,7 @@ public class AuthController : ControllerBase
     [HttpPost("api/auth/token")]
     public async Task<IActionResult> GetToken()
     {
-        var result = await _sessionManagementCmdRouter.Ask<CommandResult>(new CreateSessionCmd());
+        var result = await _sessionService.CreateSession(new CreateSessionCmd());
 
         if (result.Success && result.ResultData != null)
         {

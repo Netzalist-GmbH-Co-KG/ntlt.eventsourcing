@@ -1,8 +1,4 @@
-using Akka.Actor;
-using Akka.Hosting;
-using MartenAkkaTests.Api.Controller.v1.cmd.Requests;
 using MartenAkkaTests.Api.EventSourcing;
-using MartenAkkaTests.Api.Infrastructure.Extensions;
 using MartenAkkaTests.Api.SessionManagement;
 using MartenAkkaTests.Api.SessionManagement.Cmd;
 using Microsoft.AspNetCore.Mvc;
@@ -11,17 +7,17 @@ namespace MartenAkkaTests.Api.Controller.v1.cmd;
 
 public class SessionController : V1CommandControllerBase
 {
-    private readonly IActorRef _sessionManagementCmdRouter;
+    private readonly SessionCommandService _sessionService;
 
-    public SessionController(IRequiredActor<SessionManagementCmdRouter> sessionManagementCmdRouter)
+    public SessionController(SessionCommandService sessionService)
     {
-        _sessionManagementCmdRouter = sessionManagementCmdRouter.ActorRef;
+        _sessionService = sessionService;
     }
 
     [HttpPost("create")]
     public async Task<IActionResult> Create()
     {
-        var result = await _sessionManagementCmdRouter.Ask<CommandResult>(new CreateSessionCmd());
+        var result = await _sessionService.CreateSession(new CreateSessionCmd());
         if (result.Success && result.ResultData != null)
         {
             return Ok(new { SessionId = (Guid)result.ResultData });
@@ -31,11 +27,10 @@ public class SessionController : V1CommandControllerBase
     }
 
     [HttpPost("end")]
-    public async Task<IActionResult> End([FromBody] EndSessionRequest request)
+    public async Task<IActionResult> End([FromBody] EndSessionCmd cmd)
     {
-        var sessionId = HttpContext.GetSessionId();
-        var result = await _sessionManagementCmdRouter.Ask<CommandResult>(
-            new EndSessionCmd(sessionId, request.Reason));
+        // SessionId is automatically injected by CmdModelBinder
+        var result = await _sessionService.EndSession(cmd);
 
         if (result.Success)
         {

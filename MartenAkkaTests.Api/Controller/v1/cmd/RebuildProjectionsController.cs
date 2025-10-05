@@ -1,45 +1,31 @@
-﻿using Akka.Actor;
-using Akka.Hosting;
-using MartenAkkaTests.Api.Controller.v1.cmd.Requests;
-using MartenAkkaTests.Api.EventSourcing;
-using MartenAkkaTests.Api.Infrastructure.Extensions;
+﻿using MartenAkkaTests.Api.EventSourcing;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MartenAkkaTests.Api.Controller.v1.cmd;
 
 public class RebuildProjectionsController : V1CommandControllerBase
 {
-    private readonly IActorRef _rebuildActor;
+    private readonly RebuildProjectionService _rebuildService;
 
-    public RebuildProjectionsController(
-        IRequiredActor<RebuildProjectionActor> rebuildActor)
+    public RebuildProjectionsController(RebuildProjectionService rebuildService)
     {
-        _rebuildActor = rebuildActor.ActorRef;
+        _rebuildService = rebuildService;
     }
 
     [HttpPost("run")]
-    public async Task<IActionResult> RebuildProjections([FromBody] RebuildProjectionsRequest request)
+    public async Task<IActionResult> RebuildProjections([FromBody] RebuildProjectionCommand cmd)
     {
-        try
-        {
-            var sessionId = HttpContext.GetSessionId();
-            var result = await _rebuildActor.Ask<CommandResult>(
-                new RebuildProjectionCommand(sessionId, request.Projection),
-                TimeSpan.FromMinutes(5));
+        // SessionId is automatically injected by CmdModelBinder
+        var result = await _rebuildService.RebuildProjections(cmd);
 
-            return result.Success
-                ? Ok(new
-                {
-                    message = request.Projection != null
-                        ? $"Projection '{request.Projection}' rebuilt successfully"
-                        : "All projections rebuilt successfully",
-                    projections = result.ResultData
-                })
-                : StatusCode(500, $"Rebuild failed: {result.ErrorMessage}");
-        }
-        catch (Exception e)
-        {
-            return StatusCode(500, $"Error triggering rebuild: {e.Message}");
-        }
+        return result.Success
+            ? Ok(new
+            {
+                message = cmd.ProjectionName != null
+                    ? $"Projection '{cmd.ProjectionName}' rebuilt successfully"
+                    : "All projections rebuilt successfully",
+                projections = result.ResultData
+            })
+            : StatusCode(500, $"Rebuild failed: {result.ErrorMessage}");
     }
 }

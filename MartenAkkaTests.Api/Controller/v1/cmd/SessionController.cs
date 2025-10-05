@@ -17,7 +17,7 @@ public class SessionController : V1CommandControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> Create()
     {
-        var result = await _sessionService.Handle(new CreateSessionCmd());
+        var result = await _sessionService.CreateSession(new CreateSessionCmd());
         if (result.Success && result.ResultData != null)
         {
             return Ok(new { SessionId = (Guid)result.ResultData });
@@ -30,7 +30,7 @@ public class SessionController : V1CommandControllerBase
     public async Task<IActionResult> End([FromBody] EndSessionCmd cmd)
     {
         // SessionId is automatically injected by CmdModelBinder
-        var result = await _sessionService.Handle(cmd);
+        var result = await _sessionService.EndSession(cmd);
 
         if (result.Success)
         {

@@ -88,6 +88,11 @@ builder.Services.AddControllers();
 builder.Services.AddTransient<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddTransient<IGuidProvider, GuidProvider>();
 
+// Command Services (replacing Akka.NET actors)
+builder.Services.AddScoped<UserCommandService>();
+builder.Services.AddScoped<SessionCommandService>();
+builder.Services.AddScoped<RebuildProjectionService>();
+
 var connectionString = "host=localhost:5435;database=eventsourcing;username=postgres;password=postgres";
 builder.Services.AddMarten(options =>
     {

@@ -1,0 +1,175 @@
+@page "/"
+@using ntlt.eventsourcing.UI.Components.UI
+@using ntlt.eventsourcing.UI.Services
+@inject ApiClient ApiClient
+@inject SessionService SessionService
+@inject NavigationManager Navigation
+
+<div class="page-container">
+    <div class="page-header">
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-description">CQRS Event Sourcing Demo - Marten + Blazor</p>
+    </div>
+
+    <div class="stats-grid">
+            <Card>
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-primary">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Total Users</div>
+                        <div class="stat-value">@_users.Count</div>
+                    </div>
+                </div>
+            </Card>
+
+            <Card>
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-success">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Active Users</div>
+                        <div class="stat-value">@_users.Count(u => !u.IsDeactivated)</div>
+                    </div>
+                </div>
+            </Card>
+
+            <Card>
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-warning">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">With Password</div>
+                        <div class="stat-value">@_users.Count(u => u.HasPassword)</div>
+                    </div>
+                </div>
+            </Card>
+
+            <Card>
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon-info">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Active Sessions</div>
+                        <div class="stat-value">@_sessions.Count(s => !s.Closed)</div>
+                    </div>
+                </div>
+            </Card>
+        </div>
+
+        <div class="content-grid">
+            <Card Title="Recent Users" Description="Latest registered users">
+                @if (_users.Any())
+                {
+                    <div class="list-container">
+                        @foreach (var user in _users.Take(5))
+                        {
+                            <div class="list-item">
+                                <div class="list-item-content">
+                                    <div class="list-item-title">@user.UserName</div>
+                                    <div class="list-item-subtitle">@user.Email</div>
+                                </div>
+                                <div class="list-item-actions">
+                                    @if (user.HasPassword)
+                                    {
+                                        <Badge Variant="Badge.BadgeVariant.Success">Password Set</Badge>
+                                    }
+                                    @if (user.IsDeactivated)
+                                    {
+                                        <Badge Variant="Badge.BadgeVariant.Danger">Deactivated</Badge>
+                                    }
+                                    else
+                                    {
+                                        <Badge Variant="Badge.BadgeVariant.Info">Active</Badge>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <p>No users yet. Create your first user!</p>
+                    </div>
+                }
+            </Card>
+
+            <Card Title="Recent Sessions" Description="Latest session activity">
+                @if (_sessions.Any())
+                {
+                    <div class="list-container">
+                        @foreach (var session in _sessions.Take(5))
+                        {
+                            <div class="list-item">
+                                <div class="list-item-content">
+                                    <div class="list-item-title">@session.SessionId.ToString()[..8]...</div>
+                                    <div class="list-item-subtitle">Created: @session.CreatedAt.ToLocalTime().ToString("g")</div>
+                                </div>
+                                <div class="list-item-actions">
+                                    @if (session.Closed)
+                                    {
+                                        <Badge Variant="Badge.BadgeVariant.Default">Closed</Badge>
+                                    }
+                                    else
+                                    {
+                                        <Badge Variant="Badge.BadgeVariant.Success">Active</Badge>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <p>No sessions found</p>
+                    </div>
+                }
+            </Card>
+        </div>
+</div>
+
+@code {
+    private List<UserDto> _users = new();
+    private List<SessionDto> _sessions = new();
+    private System.Threading.Timer? _refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!SessionService.HasSession)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _users = await ApiClient.GetUsersAsync();
+        _sessions = await ApiClient.GetSessionsAsync();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
+    }
+}

@@ -1,0 +1,38 @@
+@namespace ntlt.eventsourcing.UI.Components.UI
+
+<div class="input-group @Class">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="input-label">@Label</label>
+    }
+    <input
+        class="input @(HasError ? "input-error" : "")"
+        type="@Type"
+        placeholder="@Placeholder"
+        value="@Value"
+        @oninput="HandleInput"
+        disabled="@Disabled" />
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <span class="input-error-message">@Error</span>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string Type { get; set; } = "text";
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private bool HasError => !string.IsNullOrEmpty(Error);
+
+    private async Task HandleInput(ChangeEventArgs e)
+    {
+        Value = e.Value?.ToString();
+        await ValueChanged.InvokeAsync(Value);
+    }
+}

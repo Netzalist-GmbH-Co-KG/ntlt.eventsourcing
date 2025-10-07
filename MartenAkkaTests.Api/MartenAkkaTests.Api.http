@@ -1,6 +1,0 @@
-@MartenAkkaTests.Api_HostAddress = http://localhost:5037
-
-GET {{MartenAkkaTests.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

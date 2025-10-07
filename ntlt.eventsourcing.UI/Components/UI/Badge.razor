@@ -1,0 +1,30 @@
+@namespace ntlt.eventsourcing.UI.Components.UI
+
+<span class="badge @VariantClass @Class">
+    @ChildContent
+</span>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public BadgeVariant Variant { get; set; } = BadgeVariant.Default;
+    [Parameter] public string? Class { get; set; }
+
+    private string VariantClass => Variant switch
+    {
+        BadgeVariant.Default => "badge-default",
+        BadgeVariant.Success => "badge-success",
+        BadgeVariant.Warning => "badge-warning",
+        BadgeVariant.Danger => "badge-danger",
+        BadgeVariant.Info => "badge-info",
+        _ => "badge-default"
+    };
+
+    public enum BadgeVariant
+    {
+        Default,
+        Success,
+        Warning,
+        Danger,
+        Info
+    }
+}

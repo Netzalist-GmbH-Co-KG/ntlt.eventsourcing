@@ -1,6 +1,10 @@
-﻿using Marten;
+﻿using Dapper;
+using Marten;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using Npgsql;
 using ntlt.eventsourcing.core.Common;
 using ntlt.eventsourcing.core.EventSourcing;
 using Serilog;
@@ -110,4 +114,25 @@ public static class Initialization
         options.OAuthClientId("swagger-ui");
         options.OAuthAppName(appName);
     }
+    
+    public static async Task EnsureDatabaseExists(this WebApplicationBuilder _, string connectionString)
+    {
+        var builder = new NpgsqlConnectionStringBuilder(connectionString);
+        var dbName = builder.Database;
+        builder.Database = "postgres"; // Connect to default DB
+
+        await using var conn = new NpgsqlConnection(builder.ToString());
+        await conn.OpenAsync();
+
+        var exists = await conn.ExecuteScalarAsync<bool>(
+            "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = @dbName)",
+            new { dbName });
+
+        if (!exists)
+        {
+            await conn.ExecuteAsync($"CREATE DATABASE \"{dbName}\"");
+            Log.Information("Database {DbName} created", dbName);
+        }
+    }
+
 }

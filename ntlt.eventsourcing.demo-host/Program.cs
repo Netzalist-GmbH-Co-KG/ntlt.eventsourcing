@@ -41,6 +41,8 @@ builder.Services.RegisterAutxServices();
 var connectionString = builder.Configuration.GetConnectionString("EventSourcing")
     ?? throw new InvalidOperationException("Connection string 'EventSourcing' not found.");
 
+await builder.EnsureDatabaseExists(connectionString);
+
 builder.Services.AddMarten(options =>
     {
         options.InitNtltEventSourcing(connectionString);

@@ -1,5 +1,7 @@
 using FluentValidation;
 using Marten;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ntlt.eventsourcing.core.Common;
 
 namespace ntlt.eventsourcing.core.EventSourcing;

@@ -1,14 +1,23 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <OutputType>Library</OutputType>
+
+        <!-- NuGet Package Metadata -->
+        <PackageId>ntlt.eventsourcing.core</PackageId>
+        <Version>0.1.2</Version>
+        <Authors>Tobias Waggoner</Authors>
+        <Description>Core library for CQRS Event Sourcing with Marten - provides base classes for command services, projections, and common infrastructure.</Description>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageTags>eventsourcing;cqrs;marten;aspnetcore</PackageTags>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="BCrypt.Net-Next" Version="4.0.3"/>
+        <PackageReference Include="Dapper" Version="2.1.66" />
         <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0"/>
         <PackageReference Include="Marten" Version="8.11.0"/>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9"/>

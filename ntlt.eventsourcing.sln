@@ -1,10 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ntlt.eventsourcing.Api", "ntlt.eventsourcing.Api\ntlt.eventsourcing.Api.csproj", "{A4E46F39-5B1C-43D1-B8BF-C77B9A5F7BF7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ntlt.eventsourcing.core", "ntlt.eventsourcing.core\ntlt.eventsourcing.core.csproj", "{A4E46F39-5B1C-43D1-B8BF-C77B9A5F7BF7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ntlt.eventsourcing.Api.Tests", "ntlt.eventsourcing.Api.Tests\ntlt.eventsourcing.Api.Tests.csproj", "{36C163F4-B335-4448-BEA8-1FB0971BC37D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ntlt.eventsourcing.core.Tests", "ntlt.eventsourcing.core.Tests\ntlt.eventsourcing.core.Tests.csproj", "{36C163F4-B335-4448-BEA8-1FB0971BC37D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ntlt.eventsourcing.UI", "ntlt.eventsourcing.UI\ntlt.eventsourcing.UI.csproj", "{3E68FD77-B92D-4906-8CF6-F7DC7CF72F42}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ntlt.eventsourcing.autx", "ntlt.eventsourcing.autx\ntlt.eventsourcing.autx.csproj", "{A2FAE959-A290-4121-B67E-4F77A00656F2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ntlt.eventsourcing.demo-host", "ntlt.eventsourcing.demo-host\ntlt.eventsourcing.demo-host.csproj", "{1F396E69-C93C-416E-81F3-F2B84CA992E9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{54926DE2-5BEF-4BF0-AE3F-F15789120FB2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demo", "Demo", "{A12D1221-021F-4578-8FE4-7C4C1CC72410}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ntlt.eventsourcing.autx.Tests", "ntlt.eventsourcing.autx.Tests\ntlt.eventsourcing.autx.Tests.csproj", "{C5F3886C-3A87-40A0-91FB-3642D54AC07F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,5 +34,23 @@ Global
 		{3E68FD77-B92D-4906-8CF6-F7DC7CF72F42}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E68FD77-B92D-4906-8CF6-F7DC7CF72F42}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E68FD77-B92D-4906-8CF6-F7DC7CF72F42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2FAE959-A290-4121-B67E-4F77A00656F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2FAE959-A290-4121-B67E-4F77A00656F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2FAE959-A290-4121-B67E-4F77A00656F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2FAE959-A290-4121-B67E-4F77A00656F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F396E69-C93C-416E-81F3-F2B84CA992E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F396E69-C93C-416E-81F3-F2B84CA992E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F396E69-C93C-416E-81F3-F2B84CA992E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F396E69-C93C-416E-81F3-F2B84CA992E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5F3886C-3A87-40A0-91FB-3642D54AC07F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5F3886C-3A87-40A0-91FB-3642D54AC07F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5F3886C-3A87-40A0-91FB-3642D54AC07F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5F3886C-3A87-40A0-91FB-3642D54AC07F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{36C163F4-B335-4448-BEA8-1FB0971BC37D} = {54926DE2-5BEF-4BF0-AE3F-F15789120FB2}
+		{1F396E69-C93C-416E-81F3-F2B84CA992E9} = {A12D1221-021F-4578-8FE4-7C4C1CC72410}
+		{3E68FD77-B92D-4906-8CF6-F7DC7CF72F42} = {A12D1221-021F-4578-8FE4-7C4C1CC72410}
+		{C5F3886C-3A87-40A0-91FB-3642D54AC07F} = {54926DE2-5BEF-4BF0-AE3F-F15789120FB2}
 	EndGlobalSection
 EndGlobal

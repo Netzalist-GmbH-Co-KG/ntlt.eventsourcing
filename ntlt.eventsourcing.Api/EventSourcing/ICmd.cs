@@ -1,7 +1,0 @@
-﻿namespace ntlt.eventsourcing.Api.EventSourcing;
-
-// Marker interface for commands
-public interface ICmd
-{
-    Guid? SessionId { get; }
-}

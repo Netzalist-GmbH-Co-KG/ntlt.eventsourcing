@@ -1,32 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
-
-        <!-- NuGet Package Metadata -->
-        <PackageId>ntlt.eventsourcing.core</PackageId>
-        <Version>0.1.2</Version>
-        <Authors>Tobias Waggoner</Authors>
-        <Description>Core library for CQRS Event Sourcing with Marten - provides base classes for command services, projections, and common infrastructure.</Description>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageTags>eventsourcing;cqrs;marten;aspnetcore</PackageTags>
-        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3"/>
-        <PackageReference Include="Dapper" Version="2.1.66" />
-        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0"/>
-        <PackageReference Include="Marten" Version="8.11.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9"/>
-        <PackageReference Include="Scalar.AspNetCore" Version="2.8.10"/>
-        <PackageReference Include="Serilog.AspNetCore" Version="8.0.3"/>
-        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
-        <PackageReference Include="Swashbuckle" Version="5.6.0"/>
-        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="9.0.6"/>
-        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.6"/>
-    </ItemGroup>
-
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- NuGet Package Metadata -->
+    <PackageId>ntlt.eventsourcing.core</PackageId>
+    <Version>0.1.3</Version>
+    <Authors>Tobias Waggoner</Authors>
+    <Description>Core library for CQRS Event Sourcing with Marten - provides base classes for command services, projections, and common infrastructure.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>eventsourcing;cqrs;marten;aspnetcore</PackageTags>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+    <PackageReference Include="Marten" Version="8.11.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.8.10" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Swashbuckle" Version="5.6.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="9.0.6" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.6" />
+  </ItemGroup>
 </Project>

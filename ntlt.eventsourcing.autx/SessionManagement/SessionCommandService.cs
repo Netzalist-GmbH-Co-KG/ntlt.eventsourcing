@@ -33,7 +33,9 @@ public class SessionCommandService : SessionCommandServiceBase
     {
         return await ExecuteCommandInSession(cmd, async (cmd, session, sessionObj) =>
         {
-            session.Events.Append(cmd.SessionToEndId,
+            await TryAppendEvents(
+                session, 
+                cmd.SessionToEndId, 
                 new SessionEndedEvent(cmd.SessionId!.Value, cmd.SessionToEndId, cmd.Reason, DateTimeProvider.UtcNow));
 
             return new CommandResult(cmd, true);

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using ntlt.eventsourcing.core.Common;
 using ntlt.eventsourcing.core.EventSourcing;
 using ntlt.eventsourcing.autx.EventSourcing;
+using ntlt.eventsourcing.autx.SessionManagement;
 using ntlt.eventsourcing.autx.UserManagement.Cmd;
 
 namespace ntlt.eventsourcing.autx.UserManagement;
@@ -11,7 +12,7 @@ namespace ntlt.eventsourcing.autx.UserManagement;
 ///     Command service for user management operations.
 ///     Replaces UserManagementCmdRouter and user command handler actors.
 /// </summary>
-public class UserCommandService : SessionCommandServiceBase
+public partial class UserCommandService : SessionCommandServiceBase
 {
     public UserCommandService(IServiceProvider serviceProvider, IDateTimeProvider dateTimeProvider, IGuidProvider guidProvider, ILogger<UserCommandService> logger)
         : base(serviceProvider, dateTimeProvider, guidProvider, logger)
@@ -56,9 +57,11 @@ public class UserCommandService : SessionCommandServiceBase
             // Use BCrypt for secure password hashing with work factor 12
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(cmd.Password, 12);
 
-            session.Events.Append(cmd.UserId,
+            await TryAppendEvents(
+                session, 
+                cmd.UserId, 
                 new PasswordAuthenticationAddedEvent(sessionObj.SessionId, cmd.UserId, passwordHash));
-
+            
             return new CommandResult(cmd, true);
         });
     }
@@ -76,8 +79,10 @@ public class UserCommandService : SessionCommandServiceBase
             if (existingUser.IsDeactivated)
                 // Idempotent - already deactivated
                 return new CommandResult(cmd, true);
-
-            session.Events.Append(cmd.UserId,
+            
+            await TryAppendEvents(
+                session, 
+                cmd.UserId, 
                 new UserDeactivatedEvent(sessionObj.SessionId, cmd.UserId));
 
             return new CommandResult(cmd, true);
@@ -107,9 +112,11 @@ public class UserCommandService : SessionCommandServiceBase
             if (existingUserWithEmail != null)
                 return new CommandResult(cmd, false, null, "Email already in use");
 
-            session.Events.Append(cmd.UserId,
+            await TryAppendEvents(
+                session, 
+                cmd.UserId, 
                 new UserEmailChangedEvent(sessionObj.SessionId, cmd.UserId, cmd.NewEmail, DateTimeProvider.UtcNow));
-
+            
             return new CommandResult(cmd, true);
         });
     }

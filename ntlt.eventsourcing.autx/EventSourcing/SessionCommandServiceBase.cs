@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using ntlt.eventsourcing.autx.Exceptions;
 using ntlt.eventsourcing.core.Common;
 using ntlt.eventsourcing.core.EventSourcing;
 using ntlt.eventsourcing.autx.Infrastructure.Extensions;
 using ntlt.eventsourcing.autx.SessionManagement;
+using ntlt.eventsourcing.autx.UserManagement;
 
 namespace ntlt.eventsourcing.autx.EventSourcing;
 
@@ -129,5 +131,15 @@ public abstract class SessionCommandServiceBase : CommandServiceBase
             Logger.LogError(e, "Unexpected error executing command {CommandName}", commandName);
             return new CommandResult(cmd, false, null, "An error occurred processing your request");
         }
+    }
+
+    protected async Task TryAppendEvents(IDocumentSession session, Guid streamId, 
+        params object[] events)
+    {
+        var streamState = await session.Events.FetchStreamStateAsync(streamId);
+        if (streamState == null)
+            throw new StreamStateNotFoundException();
+
+        session.Events.Append(streamId, streamState, events);
     }
 }

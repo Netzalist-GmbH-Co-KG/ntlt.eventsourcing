@@ -1,26 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-
-        <!-- NuGet Package Metadata -->
-        <PackageId>ntlt.eventsourcing.autx</PackageId>
-        <Version>0.1.2</Version>
-        <Authors>Tobias Waggoner</Authors>
-        <Description>Authentication and session management module for ntlt.eventsourcing - provides user and session management with event sourcing.</Description>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageTags>eventsourcing;cqrs;marten;authentication;session</PackageTags>
-        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\ntlt.eventsourcing.core\ntlt.eventsourcing.core.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="Marten" Version="8.11.0" />
-    </ItemGroup>
-
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- NuGet Package Metadata -->
+    <PackageId>ntlt.eventsourcing.autx</PackageId>
+    <Version>0.1.3</Version>
+    <Authors>Tobias Waggoner</Authors>
+    <Description>Authentication and session management module for ntlt.eventsourcing - provides user and session management with event sourcing.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>eventsourcing;cqrs;marten;authentication;session</PackageTags>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ntlt.eventsourcing.core\ntlt.eventsourcing.core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Marten" Version="8.11.0" />
+  </ItemGroup>
 </Project>

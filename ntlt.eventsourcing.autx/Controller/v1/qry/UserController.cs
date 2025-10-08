@@ -6,25 +6,17 @@ namespace ntlt.eventsourcing.autx.Controller.v1.qry;
 
 public class UserController : V1QueryControllerBase
 {
-    private readonly IDocumentStore _documentStore;
+    private readonly UserQueryService _userQueryService;
 
-    public UserController(IDocumentStore documentStore)
+    public UserController(UserQueryService userQueryService)
     {
-        _documentStore = documentStore;
+        _userQueryService = userQueryService;
     }
 
     [HttpGet("list")]
     public async Task<IActionResult> List()
     {
-        await using var session = _documentStore.LightweightSession();
-
-        var users = await session.Query<User>()
-            .ToListAsync();
-
-        var display = users
-            .Select(u => new
-                { u.UserId, u.UserName, u.Email, u.IsDeactivated, HasPassword = !string.IsNullOrEmpty(u.Password) });
-
-        return Ok(display);
+        var users = await _userQueryService.GetAllUsers();
+        return Ok(users);
     }
 }
